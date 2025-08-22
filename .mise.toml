@@ -1,0 +1,37 @@
+[tools]
+node = "22.18.0"
+
+[env]
+NODE_ENV = "development"
+
+[tasks.install]
+run = "npm install"
+description = "Install dependencies"
+
+[tasks.dev]
+run = "npm run dev"
+description = "Start development server"
+
+[tasks.build]
+run = "npm run build"
+description = "Build the project"
+
+[tasks.preview]
+run = "npm run preview"
+description = "Preview the built project"
+
+[tasks.types]
+run = "npm run cf-typegen"
+description = "Generate Cloudflare types"
+
+[tasks.test]
+run = "npm test"
+description = "Run tests in watch mode"
+
+[tasks."test:run"]
+run = "npm run test:run"
+description = "Run tests once"
+
+[tasks."test:watch"]
+run = "npm run test:watch"
+description = "Run tests in watch mode"
