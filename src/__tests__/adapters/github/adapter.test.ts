@@ -184,6 +184,7 @@ describe("GitHubAdapter", () => {
         "workflow_job.queued",
         "workflow_job.in_progress",
         "workflow_job.completed",
+        "ping",
       ]);
     });
 
@@ -193,6 +194,7 @@ describe("GitHubAdapter", () => {
         adapter.getWebhookSchema("workflow_job.in_progress"),
       ).toBeDefined();
       expect(adapter.getWebhookSchema("workflow_job.completed")).toBeDefined();
+      expect(adapter.getWebhookSchema("ping")).toBeDefined();
     });
   });
 
@@ -405,6 +407,49 @@ describe("GitHubAdapter", () => {
     });
   });
 
+  describe("Ping Event Handling", () => {
+    it("should handle GitHub ping webhook successfully", async () => {
+      const pingWebhook = {
+        zen: "Speak like a human.",
+        hook_id: 12345678,
+        hook: {
+          type: "Repository",
+          id: 12345678,
+          name: "web",
+          active: true,
+          events: ["workflow_job"],
+          config: {
+            content_type: "json",
+            insecure_ssl: "0",
+            url: "https://example.com/webhook",
+          },
+          updated_at: "2023-10-01T12:00:00Z",
+          created_at: "2023-10-01T11:00:00Z",
+          deliveries_url: "https://api.github.com/repos/owner/test-repo/hooks/12345678/deliveries",
+          ping_url: "https://api.github.com/repos/owner/test-repo/hooks/12345678/pings",
+          last_response: {
+            code: null,
+            status: "unused",
+            message: null,
+          },
+        },
+        repository: mockRepository,
+        sender: mockSender,
+      };
+
+      const result = await adapter.transform(pingWebhook, "ping");
+
+      expect(result).toBeDefined();
+      expect(result.success).toBe(true);
+      expect(result.message).toBe("GitHub webhook ping received successfully");
+      expect(result.ping).toBeDefined();
+      expect(result.ping.zen).toBe("Speak like a human.");
+      expect(result.ping.hook_id).toBe(12345678);
+      expect(result.ping.repository).toBe("owner/test-repo");
+      expect(result.ping.sender).toBe("developer");
+    });
+  });
+
   describe("Error Handling", () => {
     it("should throw error for unsupported event type", async () => {
       const webhook = {
@@ -418,6 +463,35 @@ describe("GitHubAdapter", () => {
       await expect(
         adapter.transform(webhook, "unsupported.event"),
       ).rejects.toThrow("Unsupported event type");
+    });
+
+    it("should handle ping event in unsupported check", async () => {
+      const pingWebhook = {
+        zen: "Test zen quote",
+        hook_id: 123,
+        hook: {
+          type: "Repository",
+          id: 123,
+          name: "web",
+          active: true,
+          events: ["ping"],
+          config: {
+            content_type: "json",
+            insecure_ssl: "0",
+            url: "https://example.com/webhook",
+          },
+          updated_at: "2023-10-01T12:00:00Z",
+          created_at: "2023-10-01T11:00:00Z",
+          deliveries_url: "https://api.github.com/repos/owner/test-repo/hooks/123/deliveries",
+          ping_url: "https://api.github.com/repos/owner/test-repo/hooks/123/pings",
+          last_response: null,
+        },
+        repository: mockRepository,
+        sender: mockSender,
+      };
+
+      const result = await adapter.transform(pingWebhook, "ping");
+      expect(result.success).toBe(true);
     });
 
     it("should throw error for invalid webhook structure", async () => {

@@ -20,6 +20,7 @@ export const GitHubUserSchema = z.object({
   received_events_url: z.string().url(),
   type: z.string(),
   site_admin: z.boolean(),
+  user_view_type: z.string().optional(),
 }).openapi("GitHubUser", {
   description: "GitHub user information",
 });
@@ -76,7 +77,7 @@ export const GitHubRepositorySchema = z.object({
   mirror_url: z.string().url().nullable(),
   hooks_url: z.string().url(),
   svn_url: z.string().url(),
-  homepage: z.string().url().nullable(),
+  homepage: z.string().url().nullable().or(z.literal("")),
   language: z.string().nullable(),
   forks_count: z.number(),
   stargazers_count: z.number(),
@@ -111,6 +112,8 @@ export const GitHubRepositorySchema = z.object({
   allow_merge_commit: z.boolean().optional(),
   subscribers_count: z.number().optional(),
   network_count: z.number().optional(),
+  allow_forking: z.boolean().optional(),
+  web_commit_signoff_required: z.boolean().optional(),
   license: z.object({
     key: z.string(),
     name: z.string(),
@@ -277,6 +280,62 @@ export const GitHubWorkflowJobCompletedWebhookSchema = GitHubWorkflowJobWebhookS
   description: "GitHub workflow job completed webhook payload",
 });
 
+// GitHub ping webhook schema
+export const GitHubPingWebhookSchema = z.object({
+  zen: z.string().openapi({
+    description: "Random zen quote from GitHub",
+    example: "Speak like a human.",
+  }),
+  hook_id: z.number().openapi({
+    description: "The ID of the webhook",
+    example: 12345678,
+  }),
+  hook: z.object({
+    type: z.string(),
+    id: z.number(),
+    name: z.string(),
+    active: z.boolean(),
+    events: z.array(z.string()),
+    config: z.object({
+      content_type: z.string(),
+      insecure_ssl: z.string(),
+      url: z.string().url(),
+    }).passthrough(), // Allow additional config properties
+    updated_at: z.string().datetime(),
+    created_at: z.string().datetime(),
+    app_id: z.number().optional(),
+    deliveries_url: z.string().url(),
+    ping_url: z.string().url(),
+    last_response: z.object({
+      code: z.number().nullable(),
+      status: z.string(),
+      message: z.string().nullable(),
+    }).nullable(),
+  }).openapi({
+    description: "The webhook configuration",
+  }),
+  repository: GitHubRepositorySchema,
+  sender: GitHubUserSchema,
+  organization: z.object({
+    login: z.string(),
+    id: z.number(),
+    node_id: z.string(),
+    url: z.string().url(),
+    repos_url: z.string().url(),
+    events_url: z.string().url(),
+    hooks_url: z.string().url(),
+    issues_url: z.string().url(),
+    members_url: z.string(),
+    public_members_url: z.string(),
+    avatar_url: z.string().url(),
+    description: z.string().nullable(),
+  }).optional().openapi({
+    description: "The organization if the webhook is for an organization",
+  }),
+}).openapi("GitHubPingWebhook", {
+  description: "GitHub ping webhook payload sent when a webhook is first created",
+});
+
 // Export types
 export type GitHubUser = z.infer<typeof GitHubUserSchema>;
 export type GitHubRepository = z.infer<typeof GitHubRepositorySchema>;
@@ -286,3 +345,4 @@ export type GitHubWorkflowJobWebhook = z.infer<typeof GitHubWorkflowJobWebhookSc
 export type GitHubWorkflowJobQueuedWebhook = z.infer<typeof GitHubWorkflowJobQueuedWebhookSchema>;
 export type GitHubWorkflowJobInProgressWebhook = z.infer<typeof GitHubWorkflowJobInProgressWebhookSchema>;
 export type GitHubWorkflowJobCompletedWebhook = z.infer<typeof GitHubWorkflowJobCompletedWebhookSchema>;
+export type GitHubPingWebhook = z.infer<typeof GitHubPingWebhookSchema>;

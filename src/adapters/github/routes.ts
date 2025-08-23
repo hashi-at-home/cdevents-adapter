@@ -4,6 +4,7 @@ import {
   GitHubWorkflowJobQueuedWebhookSchema,
   GitHubWorkflowJobInProgressWebhookSchema,
   GitHubWorkflowJobCompletedWebhookSchema,
+  GitHubPingWebhookSchema,
 } from "./schemas";
 import { AdapterResponseSchema, AdapterErrorResponseSchema } from "../base";
 
@@ -142,7 +143,7 @@ const workflowJobRoute = createRoute({
         "application/json": {
           schema: GitHubWorkflowJobQueuedWebhookSchema.or(
             GitHubWorkflowJobInProgressWebhookSchema
-          ).or(GitHubWorkflowJobCompletedWebhookSchema),
+          ).or(GitHubWorkflowJobCompletedWebhookSchema).or(GitHubPingWebhookSchema),
         },
       },
     },
@@ -170,7 +171,62 @@ const workflowJobRoute = createRoute({
   description: `
 Transform any GitHub workflow_job webhook payload into the appropriate CD Events.
 This endpoint auto-detects the action type from the payload and routes to the correct transformation.
-Supports queued, in_progress, and completed actions.
+Supports queued, in_progress, and completed actions, as well as ping events for webhook validation.
+  `.trim(),
+});
+
+// Ping webhook route
+const pingRoute = createRoute({
+  method: "post",
+  path: "/ping",
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: GitHubPingWebhookSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              message: { type: "string" },
+              ping: {
+                type: "object",
+                properties: {
+                  zen: { type: "string" },
+                  hook_id: { type: "number" },
+                  repository: { type: "string" },
+                  sender: { type: "string" },
+                },
+              },
+            },
+          },
+        },
+      },
+      description: "Ping webhook received successfully",
+    },
+    400: {
+      content: {
+        "application/json": {
+          schema: AdapterErrorResponseSchema,
+        },
+      },
+      description: "Invalid ping payload",
+    },
+  },
+  tags: ["GitHub Adapter"],
+  summary: "Handle GitHub webhook ping event",
+  description: `
+Handle GitHub webhook ping events sent when a webhook is first created.
+This endpoint validates that the webhook is properly configured and responds with a success message.
+No CD Events are generated for ping events as they are purely for webhook validation.
   `.trim(),
 });
 
@@ -325,6 +381,13 @@ githubRoutes.openapi(workflowJobCompletedRoute, async (c) => {
 githubRoutes.openapi(workflowJobRoute, async (c) => {
   try {
     const webhookData = c.req.valid("json");
+
+    // Check if this is a ping event (ping events don't have an action field)
+    if (webhookData.zen && webhookData.hook_id && !webhookData.action) {
+      const response = await githubAdapter.transform(webhookData, "ping");
+      return c.json(response);
+    }
+
     const action = webhookData.action;
     const eventType = `workflow_job.${action}`;
 
@@ -362,6 +425,26 @@ githubRoutes.openapi(workflowJobRoute, async (c) => {
   }
 });
 
+githubRoutes.openapi(pingRoute, async (c) => {
+  try {
+    const webhookData = c.req.valid("json");
+    const eventType = "ping";
+
+    const response = await githubAdapter.transform(webhookData, eventType);
+
+    return c.json(response);
+  } catch (error) {
+    return c.json(
+      {
+        success: false,
+        message: "Failed to handle ping webhook",
+        errors: [error instanceof Error ? error.message : "Unknown error"],
+      },
+      400
+    );
+  }
+});
+
 githubRoutes.openapi(adapterInfoRoute, (c) => {
   return c.json({
     name: githubAdapter.name,
@@ -372,6 +455,7 @@ githubRoutes.openapi(adapterInfoRoute, (c) => {
       workflow_job_in_progress: "/adapters/github/workflow_job/in_progress",
       workflow_job_completed: "/adapters/github/workflow_job/completed",
       workflow_job_generic: "/adapters/github/workflow_job",
+      ping: "/adapters/github/ping",
       info: "/adapters/github/info",
     },
     description: "GitHub webhook adapter for transforming workflow job events to CD Events",

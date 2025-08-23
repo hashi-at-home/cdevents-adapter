@@ -5,9 +5,11 @@ import {
   GitHubWorkflowJobQueuedWebhookSchema,
   GitHubWorkflowJobInProgressWebhookSchema,
   GitHubWorkflowJobCompletedWebhookSchema,
+  GitHubPingWebhookSchema,
   GitHubWorkflowJobQueuedWebhook,
   GitHubWorkflowJobInProgressWebhook,
   GitHubWorkflowJobCompletedWebhook,
+  GitHubPingWebhook,
 } from "./schemas";
 import {
   createPipelineRunQueuedEvent,
@@ -25,6 +27,7 @@ export class GitHubAdapter extends BaseAdapter {
     "workflow_job.queued",
     "workflow_job.in_progress",
     "workflow_job.completed",
+    "ping",
   ];
 
   async transform(webhookData: any, eventType: string): Promise<any> {
@@ -52,6 +55,10 @@ export class GitHubAdapter extends BaseAdapter {
             GitHubWorkflowJobCompletedWebhookSchema.parse(webhookData);
           return this.transformWorkflowJobCompleted(parsedWebhook);
 
+        case "ping":
+          parsedWebhook = GitHubPingWebhookSchema.parse(webhookData);
+          return this.transformPing(parsedWebhook);
+
         default:
           throw new Error(
             `Transformation not implemented for event type: ${eventType}`,
@@ -72,6 +79,8 @@ export class GitHubAdapter extends BaseAdapter {
         return GitHubWorkflowJobInProgressWebhookSchema;
       case "workflow_job.completed":
         return GitHubWorkflowJobCompletedWebhookSchema;
+      case "ping":
+        return GitHubPingWebhookSchema;
       default:
         return GitHubWorkflowJobWebhookSchema;
     }
@@ -310,5 +319,20 @@ export class GitHubAdapter extends BaseAdapter {
     }
 
     return `Workflow job "${jobName}" completed with conclusion: ${conclusion}`;
+  }
+
+  private transformPing(webhook: GitHubPingWebhook): any {
+    // For ping events, we don't create a CD Event since it's just a webhook test
+    // Instead, we return a simple success response indicating the webhook is working
+    return {
+      success: true,
+      message: "GitHub webhook ping received successfully",
+      ping: {
+        zen: webhook.zen,
+        hook_id: webhook.hook_id,
+        repository: webhook.repository.full_name,
+        sender: webhook.sender.login,
+      },
+    };
   }
 }

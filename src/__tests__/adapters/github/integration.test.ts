@@ -194,12 +194,14 @@ describe("GitHub Adapter API Integration", () => {
           "workflow_job.queued",
           "workflow_job.in_progress",
           "workflow_job.completed",
+          "ping",
         ],
         endpoints: {
           workflow_job_queued: "/adapters/github/workflow_job/queued",
           workflow_job_in_progress: "/adapters/github/workflow_job/in_progress",
           workflow_job_completed: "/adapters/github/workflow_job/completed",
           workflow_job_generic: "/adapters/github/workflow_job",
+          ping: "/adapters/github/ping",
           info: "/adapters/github/info",
         },
         description:
@@ -210,6 +212,79 @@ describe("GitHub Adapter API Integration", () => {
     it("should return JSON content type", async () => {
       const res = await app.request("/adapters/github/info");
       expect(res.headers.get("content-type")).toContain("application/json");
+    });
+  });
+
+  describe("POST /adapters/github/ping", () => {
+    it("should successfully handle GitHub ping webhook", async () => {
+      const pingPayload = {
+        zen: "Speak like a human.",
+        hook_id: 12345678,
+        hook: {
+          type: "Repository",
+          id: 12345678,
+          name: "web",
+          active: true,
+          events: ["workflow_job"],
+          config: {
+            content_type: "json",
+            insecure_ssl: "0",
+            url: "https://example.com/webhook",
+          },
+          updated_at: "2023-10-01T12:00:00Z",
+          created_at: "2023-10-01T11:00:00Z",
+          deliveries_url: "https://api.github.com/repos/owner/test-repo/hooks/12345678/deliveries",
+          ping_url: "https://api.github.com/repos/owner/test-repo/hooks/12345678/pings",
+          last_response: {
+            code: null,
+            status: "unused",
+            message: null,
+          },
+        },
+        repository: mockGitHubWebhook.repository,
+        sender: mockGitHubWebhook.sender,
+      };
+
+      const res = await app.request("/adapters/github/ping", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(pingPayload),
+      });
+
+      expect(res.status).toBe(200);
+
+      const json = await res.json();
+      expect(json.success).toBe(true);
+      expect(json.message).toBe("GitHub webhook ping received successfully");
+      expect(json.ping).toBeDefined();
+      expect(json.ping.zen).toBe("Speak like a human.");
+      expect(json.ping.hook_id).toBe(12345678);
+      expect(json.ping.repository).toBe("owner/test-repo");
+      expect(json.ping.sender).toBe("developer");
+    });
+
+    it("should reject invalid ping payload", async () => {
+      const invalidPayload = {
+        invalid: "payload",
+      };
+
+      const res = await app.request("/adapters/github/ping", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(invalidPayload),
+      });
+
+      expect(res.status).toBe(400);
+
+      const json = await res.json();
+      expect(json.success).toBe(false);
+      expect(json.error).toBeDefined();
+      expect(json.error.name).toBe("ZodError");
+      expect(json.error.message).toContain("Invalid input");
     });
   });
 
@@ -783,6 +858,176 @@ describe("GitHub Adapter API Integration", () => {
       expect(() =>
         adapter.transform(minimalWebhook, "workflow_job.queued"),
       ).not.toThrow();
+    });
+
+    it("should handle ping event on workflow_job endpoint", async () => {
+      const pingPayload = {
+        zen: "Non-blocking is better than blocking.",
+        hook_id: 565541927,
+        hook: {
+          type: "Repository",
+          id: 565541927,
+          name: "web",
+          active: true,
+          events: ["workflow_job"],
+          config: {
+            content_type: "json",
+            insecure_ssl: "0",
+            secret: "********",
+            url: "https://cdevents.brucellino.dev/adapters/github/workflow_job",
+          },
+          updated_at: "2025-08-23T07:12:54Z",
+          created_at: "2025-08-23T07:12:54Z",
+          deliveries_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/hooks/565541927/deliveries",
+          ping_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/hooks/565541927/pings",
+          last_response: {
+            code: null,
+            status: "unused",
+            message: null,
+          },
+        },
+        repository: {
+          id: 175939748,
+          node_id: "MDEwOlJlcG9zaXRvcnkxNzU5Mzk3NDg=",
+          name: "personal-automation",
+          full_name: "brucellino/personal-automation",
+          private: true,
+          owner: {
+            login: "brucellino",
+            id: 2115428,
+            node_id: "MDQ6VXNlcjIxMTU0Mjg=",
+            avatar_url: "https://avatars.githubusercontent.com/u/2115428?v=4",
+            gravatar_id: "",
+            url: "https://internal-api.service.iad.github.net/users/brucellino",
+            html_url: "https://github.com/brucellino",
+            followers_url: "https://internal-api.service.iad.github.net/users/brucellino/followers",
+            following_url: "https://internal-api.service.iad.github.net/users/brucellino/following{/other_user}",
+            gists_url: "https://internal-api.service.iad.github.net/users/brucellino/gists{/gist_id}",
+            starred_url: "https://internal-api.service.iad.github.net/users/brucellino/starred{/owner}{/repo}",
+            subscriptions_url: "https://internal-api.service.iad.github.net/users/brucellino/subscriptions",
+            organizations_url: "https://internal-api.service.iad.github.net/users/brucellino/orgs",
+            repos_url: "https://internal-api.service.iad.github.net/users/brucellino/repos",
+            events_url: "https://internal-api.service.iad.github.net/users/brucellino/events{/privacy}",
+            received_events_url: "https://internal-api.service.iad.github.net/users/brucellino/received_events",
+            type: "User",
+            site_admin: false,
+            user_view_type: "public",
+          },
+          html_url: "https://github.com/brucellino/personal-automation",
+          description: "Personal automation for my own workspace",
+          fork: false,
+          url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation",
+          forks_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/forks",
+          keys_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/keys{/key_id}",
+          collaborators_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/collaborators{/collaborator}",
+          teams_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/teams",
+          hooks_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/hooks",
+          issue_events_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/issues/events{/number}",
+          events_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/events",
+          assignees_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/assignees{/user}",
+          branches_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/branches{/branch}",
+          tags_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/tags",
+          blobs_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/git/blobs{/sha}",
+          git_tags_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/git/tags{/sha}",
+          git_refs_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/git/refs{/sha}",
+          trees_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/git/trees{/sha}",
+          statuses_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/statuses/{sha}",
+          languages_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/languages",
+          stargazers_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/stargazers",
+          contributors_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/contributors",
+          subscribers_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/subscribers",
+          subscription_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/subscription",
+          commits_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/commits{/sha}",
+          git_commits_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/git/commits{/sha}",
+          comments_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/comments{/number}",
+          issue_comment_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/issues/comments{/number}",
+          contents_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/contents/{+path}",
+          compare_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/compare/{base}...{head}",
+          merges_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/merges",
+          archive_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/{archive_format}{/ref}",
+          downloads_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/downloads",
+          issues_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/issues{/number}",
+          pulls_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/pulls{/number}",
+          milestones_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/milestones{/number}",
+          notifications_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/notifications{?since,all,participating}",
+          labels_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/labels{/name}",
+          releases_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/releases{/id}",
+          deployments_url: "https://internal-api.service.iad.github.net/repos/brucellino/personal-automation/deployments",
+          created_at: "2019-03-16T07:20:56Z",
+          updated_at: "2025-08-23T05:23:27Z",
+          pushed_at: "2025-08-23T05:23:43Z",
+          git_url: "git://github.com/brucellino/personal-automation.git",
+          ssh_url: "git@github.com:brucellino/personal-automation.git",
+          clone_url: "https://github.com/brucellino/personal-automation.git",
+          svn_url: "https://github.com/brucellino/personal-automation",
+          homepage: "",
+          size: 1428,
+          stargazers_count: 0,
+          watchers_count: 0,
+          language: "Jinja",
+          has_issues: true,
+          has_projects: true,
+          has_downloads: true,
+          has_wiki: false,
+          has_pages: false,
+          has_discussions: false,
+          forks_count: 0,
+          mirror_url: null,
+          archived: false,
+          disabled: false,
+          open_issues_count: 6,
+          license: null,
+          allow_forking: true,
+          is_template: false,
+          web_commit_signoff_required: false,
+          topics: ["hacktoberfest-accepted", "hah-runner"],
+          visibility: "private",
+          forks: 0,
+          open_issues: 6,
+          watchers: 0,
+          default_branch: "master",
+        },
+        sender: {
+          login: "brucellino",
+          id: 2115428,
+          node_id: "MDQ6VXNlcjIxMTU0Mjg=",
+          avatar_url: "https://avatars.githubusercontent.com/u/2115428?v=4",
+          gravatar_id: "",
+          url: "https://internal-api.service.iad.github.net/users/brucellino",
+          html_url: "https://github.com/brucellino",
+          followers_url: "https://internal-api.service.iad.github.net/users/brucellino/followers",
+          following_url: "https://internal-api.service.iad.github.net/users/brucellino/following{/other_user}",
+          gists_url: "https://internal-api.service.iad.github.net/users/brucellino/gists{/gist_id}",
+          starred_url: "https://internal-api.service.iad.github.net/users/brucellino/starred{/owner}{/repo}",
+          subscriptions_url: "https://internal-api.service.iad.github.net/users/brucellino/subscriptions",
+          organizations_url: "https://internal-api.service.iad.github.net/users/brucellino/orgs",
+          repos_url: "https://internal-api.service.iad.github.net/users/brucellino/repos",
+          events_url: "https://internal-api.service.iad.github.net/users/brucellino/events{/privacy}",
+          received_events_url: "https://internal-api.service.iad.github.net/users/brucellino/received_events",
+          type: "User",
+          site_admin: false,
+          user_view_type: "public",
+        },
+      };
+
+      const res = await app.request("/adapters/github/workflow_job", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(pingPayload),
+      });
+
+      expect(res.status).toBe(200);
+
+      const json = await res.json();
+      expect(json.success).toBe(true);
+      expect(json.message).toBe("GitHub webhook ping received successfully");
+      expect(json.ping).toBeDefined();
+      expect(json.ping.zen).toBe("Non-blocking is better than blocking.");
+      expect(json.ping.hook_id).toBe(565541927);
+      expect(json.ping.repository).toBe("brucellino/personal-automation");
+      expect(json.ping.sender).toBe("brucellino");
     });
   });
 });
