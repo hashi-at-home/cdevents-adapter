@@ -103,9 +103,6 @@ Visit the [CD Events specification](https://cdevents.dev/) for more information.
       description: "Reusable schema components",
     },
   ],
-  components: {
-    // Schemas are automatically generated from the validation endpoints
-  },
 });
 
 // Swagger UI endpoint
@@ -113,15 +110,6 @@ app.get(
   "/docs",
   swaggerUI({
     url: "/openapi.json",
-    config: {
-      persistAuthorization: true,
-      displayRequestDuration: true,
-      tryItOutEnabled: true,
-      requestSnippetsEnabled: true,
-      syntaxHighlight: {
-        theme: "agate",
-      },
-    },
   }),
 );
 
@@ -154,7 +142,10 @@ const validatePipelineRunQueuedRoute = createRoute({
         "application/json": {
           schema: {
             type: "object",
-            properties: { valid: { type: "boolean" } },
+            properties: {
+              valid: { type: "boolean" },
+              eventType: { type: "string" },
+            },
           },
         },
       },
@@ -190,7 +181,10 @@ const validatePipelineRunStartedRoute = createRoute({
         "application/json": {
           schema: {
             type: "object",
-            properties: { valid: { type: "boolean" } },
+            properties: {
+              valid: { type: "boolean" },
+              eventType: { type: "string" },
+            },
           },
         },
       },
@@ -226,7 +220,10 @@ const validatePipelineRunFinishedRoute = createRoute({
         "application/json": {
           schema: {
             type: "object",
-            properties: { valid: { type: "boolean" } },
+            properties: {
+              valid: { type: "boolean" },
+              eventType: { type: "string" },
+            },
           },
         },
       },
@@ -262,7 +259,10 @@ const validateTaskRunStartedRoute = createRoute({
         "application/json": {
           schema: {
             type: "object",
-            properties: { valid: { type: "boolean" } },
+            properties: {
+              valid: { type: "boolean" },
+              eventType: { type: "string" },
+            },
           },
         },
       },
@@ -298,7 +298,10 @@ const validateTaskRunFinishedRoute = createRoute({
         "application/json": {
           schema: {
             type: "object",
-            properties: { valid: { type: "boolean" } },
+            properties: {
+              valid: { type: "boolean" },
+              eventType: { type: "string" },
+            },
           },
         },
       },
@@ -334,7 +337,10 @@ const validateCoreEventRoute = createRoute({
         "application/json": {
           schema: {
             type: "object",
-            properties: { valid: { type: "boolean" } },
+            properties: {
+              valid: { type: "boolean" },
+              eventType: { type: "string" },
+            },
           },
         },
       },
@@ -355,32 +361,32 @@ const validateCoreEventRoute = createRoute({
 // Register validation endpoints
 app.openapi(validatePipelineRunQueuedRoute, (c) => {
   const body = c.req.valid("json");
-  return c.json({ valid: true, eventType: body.context.type });
+  return c.json({ valid: true, eventType: body.context.type }, 200) as any;
 });
 
 app.openapi(validatePipelineRunStartedRoute, (c) => {
   const body = c.req.valid("json");
-  return c.json({ valid: true, eventType: body.context.type });
+  return c.json({ valid: true, eventType: body.context.type }, 200) as any;
 });
 
 app.openapi(validatePipelineRunFinishedRoute, (c) => {
   const body = c.req.valid("json");
-  return c.json({ valid: true, eventType: body.context.type });
+  return c.json({ valid: true, eventType: body.context.type }, 200) as any;
 });
 
 app.openapi(validateTaskRunStartedRoute, (c) => {
   const body = c.req.valid("json");
-  return c.json({ valid: true, eventType: body.context.type });
+  return c.json({ valid: true, eventType: body.context.type }, 200) as any;
 });
 
 app.openapi(validateTaskRunFinishedRoute, (c) => {
   const body = c.req.valid("json");
-  return c.json({ valid: true, eventType: body.context.type });
+  return c.json({ valid: true, eventType: body.context.type }, 200) as any;
 });
 
 app.openapi(validateCoreEventRoute, (c) => {
   const body = c.req.valid("json");
-  return c.json({ valid: true, eventType: body.context.type });
+  return c.json({ valid: true, eventType: body.context.type }, 200) as any;
 });
 
 // Mount GitHub adapter routes
