@@ -222,7 +222,11 @@ describe("GitHub Adapter API Integration", () => {
       });
 
       expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = (await res.json()) as {
+        success: boolean;
+        message: string;
+        cdevent: any;
+      };
 
       expect(json.success).toBe(true);
       expect(json.message).toContain("successfully transformed");
@@ -242,7 +246,7 @@ describe("GitHub Adapter API Integration", () => {
         body: JSON.stringify(mockGitHubWebhook),
       });
 
-      const json = await res.json();
+      const json = (await res.json()) as { success: boolean; validation?: any };
       expect(json.validation).toBeDefined();
       // Note: validation might be skipped in test environment, so just check it exists
     });
@@ -260,7 +264,7 @@ describe("GitHub Adapter API Integration", () => {
       });
 
       expect(res.status).toBe(400);
-      const json = await res.json();
+      const json = (await res.json()) as { success: boolean; error: any };
       expect(json.success).toBe(false);
       expect(json.error).toBeDefined();
     });
@@ -299,7 +303,10 @@ describe("GitHub Adapter API Integration", () => {
       );
 
       expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = (await res.json()) as {
+        success: boolean;
+        cdevent: any;
+      };
 
       expect(json.success).toBe(true);
       expect(json.cdevent.context.type).toBe(
@@ -330,7 +337,10 @@ describe("GitHub Adapter API Integration", () => {
       });
 
       expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = (await res.json()) as {
+        success: boolean;
+        cdevent: any;
+      };
 
       expect(json.success).toBe(true);
       expect(json.cdevent.context.type).toBe(
@@ -359,7 +369,10 @@ describe("GitHub Adapter API Integration", () => {
       });
 
       expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = (await res.json()) as {
+        success: boolean;
+        cdevent: any;
+      };
 
       expect(json.success).toBe(true);
       expect(json.cdevent.subject.content.outcome).toBe("failure");
@@ -376,7 +389,11 @@ describe("GitHub Adapter API Integration", () => {
       });
 
       expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = (await res.json()) as {
+        success: boolean;
+        message: string;
+        cdevent: any;
+      };
 
       expect(json.success).toBe(true);
       expect(json.message).toContain("queued");
@@ -402,7 +419,11 @@ describe("GitHub Adapter API Integration", () => {
       });
 
       expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = (await res.json()) as {
+        success: boolean;
+        message: string;
+        cdevent: any;
+      };
 
       expect(json.success).toBe(true);
       expect(json.message).toContain("in_progress");
@@ -430,7 +451,11 @@ describe("GitHub Adapter API Integration", () => {
       });
 
       expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = (await res.json()) as {
+        success: boolean;
+        message: string;
+        cdevent: any;
+      };
 
       expect(json.success).toBe(true);
       expect(json.message).toContain("completed");
@@ -452,7 +477,7 @@ describe("GitHub Adapter API Integration", () => {
       });
 
       expect(res.status).toBe(400);
-      const json = await res.json();
+      const json = (await res.json()) as { success: boolean; error: any };
       expect(json.success).toBe(false);
       expect(json.error).toBeDefined();
     });
@@ -473,7 +498,7 @@ describe("GitHub Adapter API Integration", () => {
       });
 
       expect(res.status).toBe(200);
-      const json = await res.json();
+      const json = (await res.json()) as { success: boolean };
       expect(json.success).toBe(true);
     });
   });
@@ -486,7 +511,11 @@ describe("GitHub Adapter API Integration", () => {
         body: JSON.stringify(mockGitHubWebhook),
       });
 
-      const json = await res.json();
+      const json = (await res.json()) as {
+        success: boolean;
+        message: string;
+        cdevent: any;
+      };
 
       // Check required fields
       expect(json).toHaveProperty("success");
@@ -507,7 +536,7 @@ describe("GitHub Adapter API Integration", () => {
         body: JSON.stringify({ invalid: "webhook" }),
       });
 
-      const json = await res.json();
+      const json = (await res.json()) as { success: boolean; error: any };
 
       // Check required fields
       expect(json).toHaveProperty("success", false);
@@ -526,7 +555,7 @@ describe("GitHub Adapter API Integration", () => {
         body: JSON.stringify(mockGitHubWebhook),
       });
 
-      const json = await res.json();
+      const json = (await res.json()) as { cdevent: any };
       const customData = json.cdevent.customData.github;
 
       // Verify GitHub-specific data is preserved
@@ -567,7 +596,7 @@ describe("GitHub Adapter API Integration", () => {
         },
       );
 
-      const json = await res.json();
+      const json = (await res.json()) as { cdevent: any };
       const workflowJob = json.cdevent.customData.github.workflow_job;
 
       expect(workflowJob.runner_id).toBe(789);
