@@ -1,0 +1,759 @@
+import { describe, it, expect } from "vitest";
+import app from "../../../index";
+import { GitHubAdapter } from "../../../adapters/github/adapter";
+
+describe("GitHub Adapter API Integration", () => {
+  const mockGitHubWebhook = {
+    action: "queued",
+    workflow_job: {
+      id: 123456789,
+      run_id: 987654321,
+      run_url: "https://api.github.com/repos/owner/repo/actions/runs/987654321",
+      run_attempt: 1,
+      node_id: "MDExOldXb3JrZmxvd0pvYjEyMzQ1Njc4OQ==",
+      head_sha: "abc123def456",
+      url: "https://api.github.com/repos/owner/repo/actions/jobs/123456789",
+      html_url:
+        "https://github.com/owner/repo/actions/runs/987654321/jobs/123456789",
+      status: "queued",
+      conclusion: null,
+      started_at: "2023-10-01T12:00:00Z",
+      completed_at: null,
+      name: "build",
+      steps: [],
+      check_run_url:
+        "https://api.github.com/repos/owner/repo/check-runs/123456789",
+      labels: ["ubuntu-latest"],
+      runner_id: null,
+      runner_name: null,
+      runner_group_id: null,
+      runner_group_name: null,
+    },
+    workflow: {
+      id: 456789123,
+      node_id: "MDExOldXb3JrZmxvdzQ1Njc4OTEyMw==",
+      name: "CI/CD Pipeline",
+      path: ".github/workflows/ci.yml",
+      state: "active",
+      created_at: "2023-01-01T00:00:00Z",
+      updated_at: "2023-10-01T11:00:00Z",
+      url: "https://api.github.com/repos/owner/repo/actions/workflows/456789123",
+      html_url: "https://github.com/owner/repo/actions/workflows/ci.yml",
+      badge_url:
+        "https://github.com/owner/repo/workflows/CI%2FCD%20Pipeline/badge.svg",
+    },
+    repository: {
+      id: 123456,
+      node_id: "MDEwOlJlcG9zaXRvcnkxMjM0NTY=",
+      name: "test-repo",
+      full_name: "owner/test-repo",
+      private: false,
+      owner: {
+        login: "owner",
+        id: 12345,
+        node_id: "MDQ6VXNlcjEyMzQ1",
+        avatar_url: "https://github.com/images/error/owner_happy.gif",
+        gravatar_id: "",
+        url: "https://api.github.com/users/owner",
+        html_url: "https://github.com/owner",
+        followers_url: "https://api.github.com/users/owner/followers",
+        following_url:
+          "https://api.github.com/users/owner/following{/other_user}",
+        gists_url: "https://api.github.com/users/owner/gists{/gist_id}",
+        starred_url:
+          "https://api.github.com/users/owner/starred{/owner}{/repo}",
+        subscriptions_url: "https://api.github.com/users/owner/subscriptions",
+        organizations_url: "https://api.github.com/users/owner/orgs",
+        repos_url: "https://api.github.com/users/owner/repos",
+        events_url: "https://api.github.com/users/owner/events{/privacy}",
+        received_events_url:
+          "https://api.github.com/users/owner/received_events",
+        type: "User",
+        site_admin: false,
+      },
+      html_url: "https://github.com/owner/test-repo",
+      description: "A test repository",
+      fork: false,
+      url: "https://api.github.com/repos/owner/test-repo",
+      archive_url:
+        "https://api.github.com/repos/owner/test-repo/{archive_format}{/ref}",
+      assignees_url:
+        "https://api.github.com/repos/owner/test-repo/assignees{/user}",
+      blobs_url: "https://api.github.com/repos/owner/test-repo/git/blobs{/sha}",
+      branches_url:
+        "https://api.github.com/repos/owner/test-repo/branches{/branch}",
+      collaborators_url:
+        "https://api.github.com/repos/owner/test-repo/collaborators{/collaborator}",
+      comments_url:
+        "https://api.github.com/repos/owner/test-repo/comments{/number}",
+      commits_url: "https://api.github.com/repos/owner/test-repo/commits{/sha}",
+      compare_url:
+        "https://api.github.com/repos/owner/test-repo/compare/{base}...{head}",
+      contents_url:
+        "https://api.github.com/repos/owner/test-repo/contents/{+path}",
+      contributors_url:
+        "https://api.github.com/repos/owner/test-repo/contributors",
+      deployments_url:
+        "https://api.github.com/repos/owner/test-repo/deployments",
+      downloads_url: "https://api.github.com/repos/owner/test-repo/downloads",
+      events_url: "https://api.github.com/repos/owner/test-repo/events",
+      forks_url: "https://api.github.com/repos/owner/test-repo/forks",
+      git_commits_url:
+        "https://api.github.com/repos/owner/test-repo/git/commits{/sha}",
+      git_refs_url:
+        "https://api.github.com/repos/owner/test-repo/git/refs{/sha}",
+      git_tags_url:
+        "https://api.github.com/repos/owner/test-repo/git/tags{/sha}",
+      git_url: "git:github.com/owner/test-repo.git",
+      issue_comment_url:
+        "https://api.github.com/repos/owner/test-repo/issues/comments{/number}",
+      issue_events_url:
+        "https://api.github.com/repos/owner/test-repo/issues/events{/number}",
+      issues_url:
+        "https://api.github.com/repos/owner/test-repo/issues{/number}",
+      keys_url: "https://api.github.com/repos/owner/test-repo/keys{/key_id}",
+      labels_url: "https://api.github.com/repos/owner/test-repo/labels{/name}",
+      languages_url: "https://api.github.com/repos/owner/test-repo/languages",
+      merges_url: "https://api.github.com/repos/owner/test-repo/merges",
+      milestones_url:
+        "https://api.github.com/repos/owner/test-repo/milestones{/number}",
+      notifications_url:
+        "https://api.github.com/repos/owner/test-repo/notifications{?since,all,participating}",
+      pulls_url: "https://api.github.com/repos/owner/test-repo/pulls{/number}",
+      releases_url:
+        "https://api.github.com/repos/owner/test-repo/releases{/id}",
+      ssh_url: "git@github.com:owner/test-repo.git",
+      stargazers_url: "https://api.github.com/repos/owner/test-repo/stargazers",
+      statuses_url:
+        "https://api.github.com/repos/owner/test-repo/statuses/{sha}",
+      subscribers_url:
+        "https://api.github.com/repos/owner/test-repo/subscribers",
+      subscription_url:
+        "https://api.github.com/repos/owner/test-repo/subscription",
+      tags_url: "https://api.github.com/repos/owner/test-repo/tags",
+      teams_url: "https://api.github.com/repos/owner/test-repo/teams",
+      trees_url: "https://api.github.com/repos/owner/test-repo/git/trees{/sha}",
+      clone_url: "https://github.com/owner/test-repo.git",
+      mirror_url: null,
+      hooks_url: "https://api.github.com/repos/owner/test-repo/hooks",
+      svn_url: "https://github.com/owner/test-repo",
+      homepage: null,
+      language: "TypeScript",
+      forks_count: 5,
+      stargazers_count: 10,
+      watchers_count: 10,
+      size: 1000,
+      default_branch: "main",
+      open_issues_count: 2,
+      has_issues: true,
+      has_projects: true,
+      has_wiki: true,
+      has_pages: false,
+      has_downloads: true,
+      archived: false,
+      disabled: false,
+      pushed_at: "2023-10-01T11:30:00Z",
+      created_at: "2023-01-01T00:00:00Z",
+      updated_at: "2023-10-01T11:30:00Z",
+    },
+    sender: {
+      login: "developer",
+      id: 67890,
+      node_id: "MDQ6VXNlcjY3ODkw",
+      avatar_url: "https://github.com/images/error/developer_happy.gif",
+      gravatar_id: "",
+      url: "https://api.github.com/users/developer",
+      html_url: "https://github.com/developer",
+      followers_url: "https://api.github.com/users/developer/followers",
+      following_url:
+        "https://api.github.com/users/developer/following{/other_user}",
+      gists_url: "https://api.github.com/users/developer/gists{/gist_id}",
+      starred_url:
+        "https://api.github.com/users/developer/starred{/owner}{/repo}",
+      subscriptions_url: "https://api.github.com/users/developer/subscriptions",
+      organizations_url: "https://api.github.com/users/developer/orgs",
+      repos_url: "https://api.github.com/users/developer/repos",
+      events_url: "https://api.github.com/users/developer/events{/privacy}",
+      received_events_url:
+        "https://api.github.com/users/developer/received_events",
+      type: "User",
+      site_admin: false,
+    },
+  };
+
+  describe("GET /adapters/github/info", () => {
+    it("should return GitHub adapter information", async () => {
+      const res = await app.request("/adapters/github/info");
+      expect(res.status).toBe(200);
+
+      const json = await res.json();
+      expect(json).toEqual({
+        name: "github",
+        version: "1.0.0",
+        supportedEvents: [
+          "workflow_job.queued",
+          "workflow_job.in_progress",
+          "workflow_job.completed",
+        ],
+        endpoints: {
+          workflow_job_queued: "/adapters/github/workflow_job/queued",
+          workflow_job_in_progress: "/adapters/github/workflow_job/in_progress",
+          workflow_job_completed: "/adapters/github/workflow_job/completed",
+          workflow_job_generic: "/adapters/github/workflow_job",
+          info: "/adapters/github/info",
+        },
+        description:
+          "GitHub webhook adapter for transforming workflow job events to CD Events",
+      });
+    });
+
+    it("should return JSON content type", async () => {
+      const res = await app.request("/adapters/github/info");
+      expect(res.headers.get("content-type")).toContain("application/json");
+    });
+  });
+
+  describe("POST /adapters/github/workflow_job/queued", () => {
+    it("should successfully transform GitHub workflow_job.queued webhook", async () => {
+      const res = await app.request("/adapters/github/workflow_job/queued", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(mockGitHubWebhook),
+      });
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+
+      expect(json.success).toBe(true);
+      expect(json.message).toContain("successfully transformed");
+      expect(json.cdevent).toBeDefined();
+      expect(json.cdevent.context.type).toBe(
+        "dev.cdevents.pipelinerun.queued.0.2.0",
+      );
+      expect(json.cdevent.subject.id).toBe("github-workflow-job-123456789");
+      expect(json.cdevent.subject.content.pipelineName).toBe("CI/CD Pipeline");
+      expect(json.cdevent.customData.github.action).toBe("queued");
+    });
+
+    it("should validate generated CD Event automatically", async () => {
+      const res = await app.request("/adapters/github/workflow_job/queued", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(mockGitHubWebhook),
+      });
+
+      const json = await res.json();
+      expect(json.validation).toBeDefined();
+      // Note: validation might be skipped in test environment, so just check it exists
+    });
+
+    it("should reject invalid webhook payload", async () => {
+      const invalidWebhook = {
+        action: "queued",
+        // Missing required fields
+      };
+
+      const res = await app.request("/adapters/github/workflow_job/queued", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(invalidWebhook),
+      });
+
+      expect(res.status).toBe(400);
+      const json = await res.json();
+      expect(json.success).toBe(false);
+      expect(json.error).toBeDefined();
+    });
+
+    it("should handle malformed JSON", async () => {
+      const res = await app.request("/adapters/github/workflow_job/queued", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{ invalid json }",
+      });
+
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe("POST /adapters/github/workflow_job/in_progress", () => {
+    it("should successfully transform GitHub workflow_job.in_progress webhook", async () => {
+      const inProgressWebhook = {
+        ...mockGitHubWebhook,
+        action: "in_progress",
+        workflow_job: {
+          ...mockGitHubWebhook.workflow_job,
+          status: "in_progress",
+          runner_id: 456,
+          runner_name: "GitHub Actions Runner",
+        },
+      };
+
+      const res = await app.request(
+        "/adapters/github/workflow_job/in_progress",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(inProgressWebhook),
+        },
+      );
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+
+      expect(json.success).toBe(true);
+      expect(json.cdevent.context.type).toBe(
+        "dev.cdevents.pipelinerun.started.0.2.0",
+      );
+      expect(json.cdevent.customData.github.action).toBe("in_progress");
+      expect(json.cdevent.customData.github.workflow_job.runner_id).toBe(456);
+    });
+  });
+
+  describe("POST /adapters/github/workflow_job/completed", () => {
+    it("should successfully transform successful GitHub workflow_job.completed webhook", async () => {
+      const completedWebhook = {
+        ...mockGitHubWebhook,
+        action: "completed",
+        workflow_job: {
+          ...mockGitHubWebhook.workflow_job,
+          status: "completed",
+          conclusion: "success",
+          completed_at: "2023-10-01T12:05:00Z",
+        },
+      };
+
+      const res = await app.request("/adapters/github/workflow_job/completed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(completedWebhook),
+      });
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+
+      expect(json.success).toBe(true);
+      expect(json.cdevent.context.type).toBe(
+        "dev.cdevents.pipelinerun.finished.0.2.0",
+      );
+      expect(json.cdevent.subject.content.outcome).toBe("success");
+      expect(json.cdevent.customData.github.action).toBe("completed");
+    });
+
+    it("should successfully transform failed GitHub workflow_job.completed webhook", async () => {
+      const failedWebhook = {
+        ...mockGitHubWebhook,
+        action: "completed",
+        workflow_job: {
+          ...mockGitHubWebhook.workflow_job,
+          status: "completed",
+          conclusion: "failure",
+          completed_at: "2023-10-01T12:05:00Z",
+        },
+      };
+
+      const res = await app.request("/adapters/github/workflow_job/completed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(failedWebhook),
+      });
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+
+      expect(json.success).toBe(true);
+      expect(json.cdevent.subject.content.outcome).toBe("failure");
+      expect(json.cdevent.subject.content.errors).toContain("failed");
+    });
+  });
+
+  describe("POST /adapters/github/workflow_job", () => {
+    it("should auto-detect action and transform queued webhook", async () => {
+      const res = await app.request("/adapters/github/workflow_job", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(mockGitHubWebhook),
+      });
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+
+      expect(json.success).toBe(true);
+      expect(json.message).toContain("queued");
+      expect(json.cdevent.context.type).toBe(
+        "dev.cdevents.pipelinerun.queued.0.2.0",
+      );
+    });
+
+    it("should auto-detect action and transform in_progress webhook", async () => {
+      const inProgressWebhook = {
+        ...mockGitHubWebhook,
+        action: "in_progress",
+        workflow_job: {
+          ...mockGitHubWebhook.workflow_job,
+          status: "in_progress",
+        },
+      };
+
+      const res = await app.request("/adapters/github/workflow_job", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(inProgressWebhook),
+      });
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+
+      expect(json.success).toBe(true);
+      expect(json.message).toContain("in_progress");
+      expect(json.cdevent.context.type).toBe(
+        "dev.cdevents.pipelinerun.started.0.2.0",
+      );
+    });
+
+    it("should auto-detect action and transform completed webhook", async () => {
+      const completedWebhook = {
+        ...mockGitHubWebhook,
+        action: "completed",
+        workflow_job: {
+          ...mockGitHubWebhook.workflow_job,
+          status: "completed",
+          conclusion: "success",
+          completed_at: "2023-10-01T12:05:00Z",
+        },
+      };
+
+      const res = await app.request("/adapters/github/workflow_job", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(completedWebhook),
+      });
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+
+      expect(json.success).toBe(true);
+      expect(json.message).toContain("completed");
+      expect(json.cdevent.context.type).toBe(
+        "dev.cdevents.pipelinerun.finished.0.2.0",
+      );
+    });
+
+    it("should reject webhook with unsupported action", async () => {
+      const unsupportedWebhook = {
+        ...mockGitHubWebhook,
+        action: "unsupported_action",
+      };
+
+      const res = await app.request("/adapters/github/workflow_job", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(unsupportedWebhook),
+      });
+
+      expect(res.status).toBe(400);
+      const json = await res.json();
+      expect(json.success).toBe(false);
+      expect(json.error).toBeDefined();
+    });
+  });
+
+  describe("GitHub Webhook Headers", () => {
+    it("should handle requests with GitHub webhook headers", async () => {
+      const res = await app.request("/adapters/github/workflow_job/queued", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-GitHub-Event": "workflow_job",
+          "X-GitHub-Delivery": "12345678-1234-1234-1234-123456789012",
+          "X-Hub-Signature-256": "sha256=test-signature",
+          "User-Agent": "GitHub-Hookshot/abc123",
+        },
+        body: JSON.stringify(mockGitHubWebhook),
+      });
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.success).toBe(true);
+    });
+  });
+
+  describe("Response Format", () => {
+    it("should return consistent response format for successful transformations", async () => {
+      const res = await app.request("/adapters/github/workflow_job/queued", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(mockGitHubWebhook),
+      });
+
+      const json = await res.json();
+
+      // Check required fields
+      expect(json).toHaveProperty("success");
+      expect(json).toHaveProperty("message");
+      expect(json).toHaveProperty("cdevent");
+      expect(json).toHaveProperty("validation");
+
+      // Check types
+      expect(typeof json.success).toBe("boolean");
+      expect(typeof json.message).toBe("string");
+      expect(typeof json.cdevent).toBe("object");
+    });
+
+    it("should return consistent error response format", async () => {
+      const res = await app.request("/adapters/github/workflow_job/queued", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ invalid: "webhook" }),
+      });
+
+      const json = await res.json();
+
+      // Check required fields
+      expect(json).toHaveProperty("success", false);
+      expect(json).toHaveProperty("error");
+
+      // Check types
+      expect(typeof json.error).toBe("object");
+    });
+  });
+
+  describe("Custom Data Preservation", () => {
+    it("should preserve all GitHub-specific data in custom fields", async () => {
+      const res = await app.request("/adapters/github/workflow_job/queued", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(mockGitHubWebhook),
+      });
+
+      const json = await res.json();
+      const customData = json.cdevent.customData.github;
+
+      // Verify GitHub-specific data is preserved
+      expect(customData.workflow_job.id).toBe(
+        mockGitHubWebhook.workflow_job.id,
+      );
+      expect(customData.workflow.name).toBe(mockGitHubWebhook.workflow.name);
+      expect(customData.repository.full_name).toBe(
+        mockGitHubWebhook.repository.full_name,
+      );
+      expect(customData.sender.login).toBe(mockGitHubWebhook.sender.login);
+
+      // Verify workflow job specific fields
+      expect(customData.workflow_job.labels).toEqual(["ubuntu-latest"]);
+      expect(customData.workflow_job.status).toBe("queued");
+    });
+
+    it("should include runner information for in_progress events", async () => {
+      const inProgressWebhook = {
+        ...mockGitHubWebhook,
+        action: "in_progress",
+        workflow_job: {
+          ...mockGitHubWebhook.workflow_job,
+          status: "in_progress",
+          runner_id: 789,
+          runner_name: "Custom Runner",
+          runner_group_id: 2,
+          runner_group_name: "Custom Group",
+        },
+      };
+
+      const res = await app.request(
+        "/adapters/github/workflow_job/in_progress",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(inProgressWebhook),
+        },
+      );
+
+      const json = await res.json();
+      const workflowJob = json.cdevent.customData.github.workflow_job;
+
+      expect(workflowJob.runner_id).toBe(789);
+      expect(workflowJob.runner_name).toBe("Custom Runner");
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle workflow job with minimal required fields", async () => {
+      const minimalWebhook = {
+        action: "queued",
+        workflow_job: {
+          id: 1,
+          run_id: 1,
+          run_url: "https://api.github.com/repos/test/test/actions/runs/1",
+          run_attempt: 1,
+          node_id: "test",
+          head_sha: "abc123",
+          url: "https://api.github.com/repos/test/test/actions/jobs/1",
+          html_url: "https://github.com/test/test/actions/runs/1/jobs/1",
+          status: "queued",
+          conclusion: null,
+          started_at: "2023-10-01T12:00:00Z",
+          completed_at: null,
+          name: "test",
+          steps: [],
+          check_run_url: "https://api.github.com/repos/test/test/check-runs/1",
+          labels: ["ubuntu-latest"],
+          runner_id: null,
+          runner_name: null,
+          runner_group_id: null,
+          runner_group_name: null,
+        },
+        workflow: {
+          id: 1,
+          node_id: "test",
+          name: "Test",
+          path: ".github/workflows/test.yml",
+          state: "active",
+          created_at: "2023-01-01T00:00:00Z",
+          updated_at: "2023-01-01T00:00:00Z",
+          url: "https://api.github.com/repos/test/test/actions/workflows/1",
+          html_url: "https://github.com/test/test/actions/workflows/test.yml",
+          badge_url: "https://github.com/test/test/workflows/Test/badge.svg",
+        },
+        repository: {
+          id: 1,
+          node_id: "test",
+          name: "test",
+          full_name: "test/test",
+          private: false,
+          owner: {
+            login: "test",
+            id: 1,
+            node_id: "test",
+            avatar_url: "https://github.com/test.png",
+            gravatar_id: "",
+            url: "https://api.github.com/users/test",
+            html_url: "https://github.com/test",
+            followers_url: "https://api.github.com/users/test/followers",
+            following_url:
+              "https://api.github.com/users/test/following{/other_user}",
+            gists_url: "https://api.github.com/users/test/gists{/gist_id}",
+            starred_url:
+              "https://api.github.com/users/test/starred{/owner}{/repo}",
+            subscriptions_url:
+              "https://api.github.com/users/test/subscriptions",
+            organizations_url: "https://api.github.com/users/test/orgs",
+            repos_url: "https://api.github.com/users/test/repos",
+            events_url: "https://api.github.com/users/test/events{/privacy}",
+            received_events_url:
+              "https://api.github.com/users/test/received_events",
+            type: "User",
+            site_admin: false,
+          },
+          html_url: "https://github.com/test/test",
+          description: null,
+          fork: false,
+          url: "https://api.github.com/repos/test/test",
+          archive_url:
+            "https://api.github.com/repos/test/test/{archive_format}{/ref}",
+          assignees_url:
+            "https://api.github.com/repos/test/test/assignees{/user}",
+          blobs_url: "https://api.github.com/repos/test/test/git/blobs{/sha}",
+          branches_url:
+            "https://api.github.com/repos/test/test/branches{/branch}",
+          collaborators_url:
+            "https://api.github.com/repos/test/test/collaborators{/collaborator}",
+          comments_url:
+            "https://api.github.com/repos/test/test/comments{/number}",
+          commits_url: "https://api.github.com/repos/test/test/commits{/sha}",
+          compare_url:
+            "https://api.github.com/repos/test/test/compare/{base}...{head}",
+          contents_url:
+            "https://api.github.com/repos/test/test/contents/{+path}",
+          contributors_url:
+            "https://api.github.com/repos/test/test/contributors",
+          deployments_url: "https://api.github.com/repos/test/test/deployments",
+          downloads_url: "https://api.github.com/repos/test/test/downloads",
+          events_url: "https://api.github.com/repos/test/test/events",
+          forks_url: "https://api.github.com/repos/test/test/forks",
+          git_commits_url:
+            "https://api.github.com/repos/test/test/git/commits{/sha}",
+          git_refs_url: "https://api.github.com/repos/test/test/git/refs{/sha}",
+          git_tags_url: "https://api.github.com/repos/test/test/git/tags{/sha}",
+          git_url: "git:github.com/test/test.git",
+          issue_comment_url:
+            "https://api.github.com/repos/test/test/issues/comments{/number}",
+          issue_events_url:
+            "https://api.github.com/repos/test/test/issues/events{/number}",
+          issues_url: "https://api.github.com/repos/test/test/issues{/number}",
+          keys_url: "https://api.github.com/repos/test/test/keys{/key_id}",
+          labels_url: "https://api.github.com/repos/test/test/labels{/name}",
+          languages_url: "https://api.github.com/repos/test/test/languages",
+          merges_url: "https://api.github.com/repos/test/test/merges",
+          milestones_url:
+            "https://api.github.com/repos/test/test/milestones{/number}",
+          notifications_url:
+            "https://api.github.com/repos/test/test/notifications{?since,all,participating}",
+          pulls_url: "https://api.github.com/repos/test/test/pulls{/number}",
+          releases_url: "https://api.github.com/repos/test/test/releases{/id}",
+          ssh_url: "git@github.com:test/test.git",
+          stargazers_url: "https://api.github.com/repos/test/test/stargazers",
+          statuses_url: "https://api.github.com/repos/test/test/statuses/{sha}",
+          subscribers_url: "https://api.github.com/repos/test/test/subscribers",
+          subscription_url:
+            "https://api.github.com/repos/test/test/subscription",
+          tags_url: "https://api.github.com/repos/test/test/tags",
+          teams_url: "https://api.github.com/repos/test/test/teams",
+          trees_url: "https://api.github.com/repos/test/test/git/trees{/sha}",
+          clone_url: "https://github.com/test/test.git",
+          mirror_url: null,
+          hooks_url: "https://api.github.com/repos/test/test/hooks",
+          svn_url: "https://github.com/test/test",
+          homepage: null,
+          language: null,
+          forks_count: 0,
+          stargazers_count: 0,
+          watchers_count: 0,
+          size: 0,
+          default_branch: "main",
+          open_issues_count: 0,
+          is_template: false,
+          topics: [],
+          has_issues: true,
+          has_projects: true,
+          has_wiki: true,
+          has_pages: false,
+          has_downloads: true,
+          archived: false,
+          disabled: false,
+          visibility: "public",
+          pushed_at: "2023-10-01T12:00:00Z",
+          created_at: "2023-10-01T12:00:00Z",
+          updated_at: "2023-10-01T12:00:00Z",
+        },
+        sender: {
+          id: 1,
+          login: "test-user",
+          node_id: "test-node-id",
+          avatar_url: "https://github.com/images/error/test-user_happy.gif",
+          gravatar_id: "",
+          url: "https://api.github.com/users/test-user",
+          html_url: "https://github.com/test-user",
+          followers_url: "https://api.github.com/users/test-user/followers",
+          following_url:
+            "https://api.github.com/users/test-user/following{/other_user}",
+          gists_url: "https://api.github.com/users/test-user/gists{/gist_id}",
+          starred_url:
+            "https://api.github.com/users/test-user/starred{/owner}{/repo}",
+          subscriptions_url:
+            "https://api.github.com/users/test-user/subscriptions",
+          organizations_url: "https://api.github.com/users/test-user/orgs",
+          repos_url: "https://api.github.com/users/test-user/repos",
+          events_url: "https://api.github.com/users/test-user/events{/privacy}",
+          received_events_url:
+            "https://api.github.com/users/test-user/received_events",
+          type: "User",
+          site_admin: false,
+        },
+      };
+
+      const adapter = new GitHubAdapter();
+      expect(() =>
+        adapter.transform(minimalWebhook, "workflow_job.queued"),
+      ).not.toThrow();
+    });
+  });
+});
