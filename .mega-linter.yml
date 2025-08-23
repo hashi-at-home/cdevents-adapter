@@ -1,0 +1,52 @@
+# MegaLinter configuration file
+# See https://megalinter.io/configuration/ for all available variables
+
+# Apply linters configuration
+APPLY_FIXES: none # all, none, or list of linter keys
+# APPLY_FIXES_EVENT: pull_request # all, push, pull_request, none
+# APPLY_FIXES_MODE: commit # commit, pull_request
+
+# Activate specific linters
+ENABLE_LINTERS:
+  - ACTION_ACTIONLINT
+  - TYPESCRIPT_PRETTIER
+  - MARKDOWN_MARKDOWNLINT
+  - REPOSITORY_TRIVY
+
+# Disable linters that might conflict or are not needed
+DISABLE_LINTERS:
+  - SPELL_CSPELL # Can be noisy for technical terms
+  - COPYPASTE_JSCPD # Can be noisy for small projects
+  - REPOSITORY_CHECKOV # Might be overkill for this project
+
+# Exclude patterns
+FILTER_REGEX_EXCLUDE: |
+  (?x)(
+    node_modules/.*|
+    \.wrangler/.*|
+    dist/.*|
+    build/.*|
+    coverage/.*|
+    \.git/.*|
+    package-lock\.json|
+    \.secrets\.baseline
+  )
+
+# Markdown configuration
+MARKDOWN_MARKDOWNLINT_CONFIG_FILE: .markdownlint.json
+MARKDOWN_MARKDOWNLINT_DISABLE_ERRORS: false
+
+# Security tools configuration
+REPOSITORY_SECRETLINT_DISABLE_ERRORS: false
+REPOSITORY_TRIVY_DISABLE_ERRORS: true # Set to false if you want to enforce security checks
+REPOSITORY_GITLEAKS_DISABLE_ERRORS: false
+
+# Reporting
+REPORT_OUTPUT_FOLDER: megalinter-reports
+FILEIO_REPORTER: false
+GITHUB_STATUS_REPORTER: true
+GITHUB_COMMENT_REPORTER: true
+
+# Performance
+PARALLEL: true
+LOG_LEVEL: INFO

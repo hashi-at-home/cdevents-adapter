@@ -1,8 +1,12 @@
 [tools]
 node = "22.18.0"
+uv = "latest"
+"pipx:Yelp/detect-secrets" = "latest"
 
 [env]
 NODE_ENV = "development"
+_.path = ['{{config_root}}/node_modules/.bin']
+BIN_PATH = "{{ config_root }}/node_modules/.bin"
 
 [tasks.install]
 run = "npm install"
