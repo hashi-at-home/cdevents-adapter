@@ -17,7 +17,12 @@ import {
   LinkKindEnum,
 } from "./schemas";
 
-const app = new OpenAPIHono();
+type Environment = {
+  readonly CI_BUILD_QUEUED_Q: Queue<Error>
+  readonly CI_BUILD_QUEUED_BUCKET: R2Bucket
+}
+
+const app = new OpenAPIHono<{ Bindings: Environment }>();
 
 // OpenAPI documentation endpoint
 app.doc("/openapi.json", {
@@ -432,6 +437,7 @@ app.get("/", (c) => {
         version: "1.0.0",
         supported_events: [
           "workflow_job.queued",
+          "workflow_job.waiting",
           "workflow_job.in_progress",
           "workflow_job.completed",
         ],

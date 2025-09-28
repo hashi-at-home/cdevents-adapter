@@ -66,16 +66,16 @@ export const GitHubRepositorySchema = z.object({
   pulls_url: z.string(),
   releases_url: z.string(),
   ssh_url: z.string(),
-  stargazers_url: z.string().url(),
-  statuses_url: z.string(),
-  subscribers_url: z.string().url(),
-  subscription_url: z.string().url(),
-  tags_url: z.string().url(),
-  teams_url: z.string().url(),
-  trees_url: z.string(),
+  stargazers_url: z.string().url().optional(),
+  statuses_url: z.string().optional(),
+  subscribers_url: z.string().url().optional(),
+  subscription_url: z.string().url().optional(),
+  tags_url: z.string().url().optional(),
+  teams_url: z.string().url().optional(),
+  trees_url: z.string().optional(),
   clone_url: z.string().url(),
   mirror_url: z.string().url().nullable(),
-  hooks_url: z.string().url(),
+  hooks_url: z.string().url().optional(),
   svn_url: z.string().url(),
   homepage: z.string().url().nullable().or(z.literal("")),
   language: z.string().nullable(),
@@ -131,7 +131,7 @@ export const GitHubRepositorySchema = z.object({
 // GitHub workflow job specific schemas
 export const GitHubWorkflowJobStepSchema = z.object({
   name: z.string(),
-  status: z.enum(["queued", "in_progress", "completed"]),
+  status: z.enum(["queued", "waiting", "in_progress", "completed"]),
   conclusion: z.enum(["success", "failure", "neutral", "cancelled", "skipped", "timed_out", "action_required"]).nullable(),
   number: z.number(),
   started_at: z.string().datetime().nullable(),
@@ -143,14 +143,17 @@ export const GitHubWorkflowJobStepSchema = z.object({
 export const GitHubWorkflowJobSchema = z.object({
   id: z.number(),
   run_id: z.number(),
+  workflow_name: z.string(),
+  head_branch: z.string(),
   run_url: z.string().url(),
   run_attempt: z.number(),
   node_id: z.string(),
   head_sha: z.string(),
   url: z.string().url(),
   html_url: z.string().url(),
-  status: z.enum(["queued", "in_progress", "completed"]),
+  status: z.enum(["queued", "waiting", "in_progress", "completed"]),
   conclusion: z.enum(["success", "failure", "neutral", "cancelled", "skipped", "timed_out", "action_required"]).nullable(),
+  created_at: z.string().datetime(),
   started_at: z.string().datetime(),
   completed_at: z.string().datetime().nullable(),
   name: z.string(),
@@ -220,23 +223,12 @@ export const GitHubWorkflowRunSchema = z.object({
 
 // Main webhook payload schema for workflow_job events
 export const GitHubWorkflowJobWebhookSchema = z.object({
-  action: z.enum(["queued", "in_progress", "completed"]).openapi({
+  action: z.enum(["queued", "waiting", "in_progress", "completed"]).openapi({
     description: "The action that was performed on the workflow job",
     example: "queued",
   }),
   workflow_job: GitHubWorkflowJobSchema,
-  workflow: z.object({
-    id: z.number(),
-    node_id: z.string(),
-    name: z.string(),
-    path: z.string(),
-    state: z.string(),
-    created_at: z.string().datetime(),
-    updated_at: z.string().datetime(),
-    url: z.string().url(),
-    html_url: z.string().url(),
-    badge_url: z.string().url(),
-  }),
+
   repository: GitHubRepositorySchema,
   sender: GitHubUserSchema,
   installation: z.object({
@@ -266,6 +258,12 @@ export const GitHubWorkflowJobQueuedWebhookSchema = GitHubWorkflowJobWebhookSche
   action: z.literal("queued"),
 }).openapi("GitHubWorkflowJobQueuedWebhook", {
   description: "GitHub workflow job queued webhook payload",
+});
+
+export const GitHubWorkflowJobWaitingWebhookSchema = GitHubWorkflowJobWebhookSchema.extend({
+  action: z.literal("waiting"),
+}).openapi("GitHubWorkflowJobWaitingWebhook", {
+  description: "GitHub workflow job waiting webhook payload",
 });
 
 export const GitHubWorkflowJobInProgressWebhookSchema = GitHubWorkflowJobWebhookSchema.extend({
@@ -343,6 +341,7 @@ export type GitHubWorkflowJob = z.infer<typeof GitHubWorkflowJobSchema>;
 export type GitHubWorkflowRun = z.infer<typeof GitHubWorkflowRunSchema>;
 export type GitHubWorkflowJobWebhook = z.infer<typeof GitHubWorkflowJobWebhookSchema>;
 export type GitHubWorkflowJobQueuedWebhook = z.infer<typeof GitHubWorkflowJobQueuedWebhookSchema>;
+export type GitHubWorkflowJobWaitingWebhook = z.infer<typeof GitHubWorkflowJobWaitingWebhookSchema>;
 export type GitHubWorkflowJobInProgressWebhook = z.infer<typeof GitHubWorkflowJobInProgressWebhookSchema>;
 export type GitHubWorkflowJobCompletedWebhook = z.infer<typeof GitHubWorkflowJobCompletedWebhookSchema>;
 export type GitHubPingWebhook = z.infer<typeof GitHubPingWebhookSchema>;

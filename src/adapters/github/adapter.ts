@@ -3,10 +3,12 @@ import { BaseAdapter, WebhookEventMetadata, AdapterUtils } from "../base";
 import {
   GitHubWorkflowJobWebhookSchema,
   GitHubWorkflowJobQueuedWebhookSchema,
+  GitHubWorkflowJobWaitingWebhookSchema,
   GitHubWorkflowJobInProgressWebhookSchema,
   GitHubWorkflowJobCompletedWebhookSchema,
   GitHubPingWebhookSchema,
   GitHubWorkflowJobQueuedWebhook,
+  GitHubWorkflowJobWaitingWebhook,
   GitHubWorkflowJobInProgressWebhook,
   GitHubWorkflowJobCompletedWebhook,
   GitHubPingWebhook,
@@ -25,6 +27,7 @@ export class GitHubAdapter extends BaseAdapter {
   readonly version = "1.0.0";
   readonly supportedEvents = [
     "workflow_job.queued",
+    "workflow_job.waiting",
     "workflow_job.in_progress",
     "workflow_job.completed",
     "ping",
@@ -44,6 +47,11 @@ export class GitHubAdapter extends BaseAdapter {
           parsedWebhook =
             GitHubWorkflowJobQueuedWebhookSchema.parse(webhookData);
           return this.transformWorkflowJobQueued(parsedWebhook);
+
+        case "workflow_job.waiting":
+          parsedWebhook =
+            GitHubWorkflowJobWaitingWebhookSchema.parse(webhookData);
+          return this.transformWorkflowJobWaiting(parsedWebhook);
 
         case "workflow_job.in_progress":
           parsedWebhook =
@@ -75,6 +83,8 @@ export class GitHubAdapter extends BaseAdapter {
     switch (eventType) {
       case "workflow_job.queued":
         return GitHubWorkflowJobQueuedWebhookSchema;
+      case "workflow_job.waiting":
+        return GitHubWorkflowJobWaitingWebhookSchema;
       case "workflow_job.in_progress":
         return GitHubWorkflowJobInProgressWebhookSchema;
       case "workflow_job.completed":
@@ -108,7 +118,7 @@ export class GitHubAdapter extends BaseAdapter {
       metadata.source,
       metadata.timestamp,
       this.createSubjectId(webhook.workflow_job),
-      webhook.workflow.name,
+      webhook.workflow_job.workflow_name,
       webhook.workflow_job.html_url,
     );
 
@@ -122,11 +132,53 @@ export class GitHubAdapter extends BaseAdapter {
           name: webhook.workflow_job.name,
           labels: webhook.workflow_job.labels,
           status: webhook.workflow_job.status,
+          workflow_name: webhook.workflow_job.workflow_name,
+          head_branch: webhook.workflow_job.head_branch,
         },
-        workflow: {
-          id: webhook.workflow.id,
-          name: webhook.workflow.name,
-          path: webhook.workflow.path,
+        repository: {
+          id: webhook.repository.id,
+          name: webhook.repository.name,
+          full_name: webhook.repository.full_name,
+          owner: webhook.repository.owner.login,
+        },
+        sender: {
+          login: webhook.sender.login,
+          id: webhook.sender.id,
+        },
+      },
+    };
+
+    return cdevent;
+  }
+
+  private transformWorkflowJobWaiting(
+    webhook: GitHubWorkflowJobWaitingWebhook,
+  ): any {
+    const metadata = this.extractGitHubMetadata(webhook);
+
+    // For workflow_job.waiting, we create a pipeline run queued event
+    // The workflow job represents a task within a pipeline (workflow run)
+    const cdevent = createPipelineRunQueuedEvent(
+      metadata.eventId,
+      metadata.source,
+      metadata.timestamp,
+      this.createSubjectId(webhook.workflow_job),
+      webhook.workflow_job.workflow_name,
+      webhook.workflow_job.html_url,
+    );
+
+    // Add custom data with GitHub-specific information
+    cdevent.customData = {
+      github: {
+        action: webhook.action,
+        workflow_job: {
+          id: webhook.workflow_job.id,
+          run_id: webhook.workflow_job.run_id,
+          name: webhook.workflow_job.name,
+          labels: webhook.workflow_job.labels,
+          status: webhook.workflow_job.status,
+          workflow_name: webhook.workflow_job.workflow_name,
+          head_branch: webhook.workflow_job.head_branch,
         },
         repository: {
           id: webhook.repository.id,
@@ -155,7 +207,7 @@ export class GitHubAdapter extends BaseAdapter {
       metadata.source,
       metadata.timestamp,
       this.createSubjectId(webhook.workflow_job),
-      webhook.workflow.name,
+      webhook.workflow_job.workflow_name,
       webhook.workflow_job.html_url,
     );
 
@@ -172,11 +224,8 @@ export class GitHubAdapter extends BaseAdapter {
           started_at: webhook.workflow_job.started_at,
           runner_id: webhook.workflow_job.runner_id,
           runner_name: webhook.workflow_job.runner_name,
-        },
-        workflow: {
-          id: webhook.workflow.id,
-          name: webhook.workflow.name,
-          path: webhook.workflow.path,
+          workflow_name: webhook.workflow_job.workflow_name,
+          head_branch: webhook.workflow_job.head_branch,
         },
         repository: {
           id: webhook.repository.id,
@@ -211,7 +260,7 @@ export class GitHubAdapter extends BaseAdapter {
       metadata.timestamp,
       this.createSubjectId(webhook.workflow_job),
       outcome,
-      webhook.workflow.name,
+      webhook.workflow_job.workflow_name,
       webhook.workflow_job.html_url,
       outcome === "error" || outcome === "failure"
         ? this.extractErrorMessage(webhook)
@@ -234,11 +283,8 @@ export class GitHubAdapter extends BaseAdapter {
           runner_id: webhook.workflow_job.runner_id,
           runner_name: webhook.workflow_job.runner_name,
           steps: webhook.workflow_job.steps,
-        },
-        workflow: {
-          id: webhook.workflow.id,
-          name: webhook.workflow.name,
-          path: webhook.workflow.path,
+          workflow_name: webhook.workflow_job.workflow_name,
+          head_branch: webhook.workflow_job.head_branch,
         },
         repository: {
           id: webhook.repository.id,
@@ -259,6 +305,7 @@ export class GitHubAdapter extends BaseAdapter {
   private extractGitHubMetadata(
     webhook:
       | GitHubWorkflowJobQueuedWebhook
+      | GitHubWorkflowJobWaitingWebhook
       | GitHubWorkflowJobInProgressWebhook
       | GitHubWorkflowJobCompletedWebhook,
   ): WebhookEventMetadata {
@@ -273,7 +320,7 @@ export class GitHubAdapter extends BaseAdapter {
         webhook.repository.name,
       ),
       eventType: `workflow_job.${webhook.action}`,
-      timestamp: webhook.workflow_job.started_at || new Date().toISOString(),
+      timestamp: webhook.workflow_job.started_at || webhook.workflow_job.created_at || new Date().toISOString(),
     };
   }
 

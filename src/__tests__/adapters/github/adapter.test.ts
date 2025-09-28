@@ -12,6 +12,8 @@ describe("GitHubAdapter", () => {
   const mockWorkflowJob = {
     id: 123456789,
     run_id: 987654321,
+    workflow_name: "CI/CD Pipeline",
+    head_branch: "main",
     run_url: "https://api.github.com/repos/owner/repo/actions/runs/987654321",
     run_attempt: 1,
     node_id: "MDExOldXb3JrZmxvd0pvYjEyMzQ1Njc4OQ==",
@@ -19,6 +21,7 @@ describe("GitHubAdapter", () => {
     url: "https://api.github.com/repos/owner/repo/actions/jobs/123456789",
     html_url:
       "https://github.com/owner/repo/actions/runs/987654321/jobs/123456789",
+    created_at: "2023-10-01T11:50:00Z",
     started_at: "2023-10-01T12:00:00Z",
     completed_at: null,
     name: "build",
@@ -182,6 +185,7 @@ describe("GitHubAdapter", () => {
       expect(adapter.version).toBe("1.0.0");
       expect(adapter.supportedEvents).toEqual([
         "workflow_job.queued",
+        "workflow_job.waiting",
         "workflow_job.in_progress",
         "workflow_job.completed",
         "ping",
@@ -207,13 +211,167 @@ describe("GitHubAdapter", () => {
           status: "queued",
           conclusion: null,
         },
-        workflow: mockWorkflow,
         repository: mockRepository,
         sender: mockSender,
       };
 
       const isValid = await adapter.validateWebhook(validWebhook);
       expect(isValid).toBe(true);
+    });
+
+    it("should validate actual GitHub webhook payload structure", async () => {
+      const actualWebhookPayload = {
+        action: "queued",
+        workflow_job: {
+          id: 49565775813,
+          run_id: 17454675960,
+          workflow_name: "Release",
+          head_branch: "master",
+          run_url: "https://api.github.com/repos/brucellino/personal-automation/actions/runs/17454675960",
+          run_attempt: 1,
+          node_id: "CR_kwDOCnygpM8AAAALilm3xQ",
+          head_sha: "21105e046013dbbfdaa8ad7fbd8aa6bf51115731",
+          url: "https://api.github.com/repos/brucellino/personal-automation/actions/jobs/49565775813",
+          html_url: "https://github.com/brucellino/personal-automation/actions/runs/17454675960/job/49565775813",
+          status: "queued",
+          conclusion: null,
+          created_at: "2025-09-04T05:52:26Z",
+          started_at: "2025-09-04T05:52:26Z",
+          completed_at: null,
+          name: "Lint",
+          steps: [],
+          check_run_url: "https://api.github.com/repos/brucellino/personal-automation/check-runs/49565775813",
+          labels: ["self-hosted, hah"],
+          runner_id: null,
+          runner_name: null,
+          runner_group_id: null,
+          runner_group_name: null
+        },
+        repository: {
+          id: 175939748,
+          node_id: "MDEwOlJlcG9zaXRvcnkxNzU5Mzk3NDg=",
+          name: "personal-automation",
+          full_name: "brucellino/personal-automation",
+          private: true,
+          owner: {
+            login: "brucellino",
+            id: 2115428,
+            node_id: "MDQ6VXNlcjIxMTU0Mjg=",
+            avatar_url: "https://avatars.githubusercontent.com/u/2115428?v=4",
+            gravatar_id: "",
+            url: "https://api.github.com/users/brucellino",
+            html_url: "https://github.com/brucellino",
+            followers_url: "https://api.github.com/users/brucellino/followers",
+            following_url: "https://api.github.com/users/brucellino/following{/other_user}",
+            gists_url: "https://api.github.com/users/brucellino/gists{/gist_id}",
+            starred_url: "https://api.github.com/users/brucellino/starred{/owner}{/repo}",
+            subscriptions_url: "https://api.github.com/users/brucellino/subscriptions",
+            organizations_url: "https://api.github.com/users/brucellino/orgs",
+            repos_url: "https://api.github.com/users/brucellino/repos",
+            events_url: "https://api.github.com/users/brucellino/events{/privacy}",
+            received_events_url: "https://api.github.com/users/brucellino/received_events",
+            type: "User",
+            user_view_type: "public",
+            site_admin: false
+          },
+          html_url: "https://github.com/brucellino/personal-automation",
+          description: "Personal automation for my own workspace",
+          fork: false,
+          url: "https://api.github.com/repos/brucellino/personal-automation",
+          archive_url: "https://api.github.com/repos/brucellino/personal-automation/{archive_format}{/ref}",
+          assignees_url: "https://api.github.com/repos/brucellino/personal-automation/assignees{/user}",
+          blobs_url: "https://api.github.com/repos/brucellino/personal-automation/git/blobs{/sha}",
+          branches_url: "https://api.github.com/repos/brucellino/personal-automation/branches{/branch}",
+          collaborators_url: "https://api.github.com/repos/brucellino/personal-automation/collaborators{/collaborator}",
+          comments_url: "https://api.github.com/repos/brucellino/personal-automation/comments{/number}",
+          commits_url: "https://api.github.com/repos/brucellino/personal-automation/commits{/sha}",
+          compare_url: "https://api.github.com/repos/brucellino/personal-automation/compare/{base}...{head}",
+          contents_url: "https://api.github.com/repos/brucellino/personal-automation/contents/{+path}",
+          contributors_url: "https://api.github.com/repos/brucellino/personal-automation/contributors",
+          deployments_url: "https://api.github.com/repos/brucellino/personal-automation/deployments",
+          downloads_url: "https://api.github.com/repos/brucellino/personal-automation/downloads",
+          events_url: "https://api.github.com/repos/brucellino/personal-automation/events",
+          forks_url: "https://api.github.com/repos/brucellino/personal-automation/forks",
+          git_commits_url: "https://api.github.com/repos/brucellino/personal-automation/git/commits{/sha}",
+          git_refs_url: "https://api.github.com/repos/brucellino/personal-automation/git/refs{/sha}",
+          git_tags_url: "https://api.github.com/repos/brucellino/personal-automation/git/tags{/sha}",
+          git_url: "git://github.com/brucellino/personal-automation.git",
+          issue_comment_url: "https://api.github.com/repos/brucellino/personal-automation/issues/comments{/number}",
+          issue_events_url: "https://api.github.com/repos/brucellino/personal-automation/issues/events{/number}",
+          issues_url: "https://api.github.com/repos/brucellino/personal-automation/issues{/number}",
+          keys_url: "https://api.github.com/repos/brucellino/personal-automation/keys{/key_id}",
+          labels_url: "https://api.github.com/repos/brucellino/personal-automation/labels{/name}",
+          languages_url: "https://api.github.com/repos/brucellino/personal-automation/languages",
+          merges_url: "https://api.github.com/repos/brucellino/personal-automation/merges",
+          milestones_url: "https://api.github.com/repos/brucellino/personal-automation/milestones{/number}",
+          notifications_url: "https://api.github.com/repos/brucellino/personal-automation/notifications{?since,all,participating}",
+          pulls_url: "https://api.github.com/repos/brucellino/personal-automation/pulls{/number}",
+          releases_url: "https://api.github.com/repos/brucellino/personal-automation/releases{/id}",
+          ssh_url: "git@github.com:brucellino/personal-automation.git",
+          clone_url: "https://github.com/brucellino/personal-automation.git",
+          svn_url: "https://github.com/brucellino/personal-automation",
+          homepage: "",
+          size: 1428,
+          stargazers_count: 0,
+          watchers_count: 0,
+          language: "Jinja",
+          has_issues: true,
+          has_projects: true,
+          has_downloads: true,
+          has_wiki: false,
+          has_pages: false,
+          has_discussions: false,
+          forks_count: 0,
+          mirror_url: null,
+          archived: false,
+          disabled: false,
+          open_issues_count: 11,
+          license: null,
+          allow_forking: true,
+          is_template: false,
+          web_commit_signoff_required: false,
+          topics: ["hacktoberfest-accepted", "hah-runner"],
+          visibility: "private",
+          forks: 0,
+          open_issues: 11,
+          watchers: 0,
+          default_branch: "master",
+          created_at: "2019-03-16T07:20:56Z",
+          updated_at: "2025-08-25T06:03:57Z",
+          pushed_at: "2025-09-04T05:52:24Z"
+        },
+        sender: {
+          login: "brucellino",
+          id: 2115428,
+          node_id: "MDQ6VXNlcjIxMTU0Mjg=",
+          avatar_url: "https://avatars.githubusercontent.com/u/2115428?v=4",
+          gravatar_id: "",
+          url: "https://api.github.com/users/brucellino",
+          html_url: "https://github.com/brucellino",
+          followers_url: "https://api.github.com/users/brucellino/followers",
+          following_url: "https://api.github.com/users/brucellino/following{/other_user}",
+          gists_url: "https://api.github.com/users/brucellino/gists{/gist_id}",
+          starred_url: "https://api.github.com/users/brucellino/starred{/owner}{/repo}",
+          subscriptions_url: "https://api.github.com/users/brucellino/subscriptions",
+          organizations_url: "https://api.github.com/users/brucellino/orgs",
+          repos_url: "https://api.github.com/users/brucellino/repos",
+          events_url: "https://api.github.com/users/brucellino/events{/privacy}",
+          received_events_url: "https://api.github.com/users/brucellino/received_events",
+          type: "User",
+          user_view_type: "public",
+          site_admin: false
+        }
+      };
+
+      const isValid = await adapter.validateWebhook(actualWebhookPayload);
+      expect(isValid).toBe(true);
+
+      // Test that transformation also works with actual payload
+      const result = await adapter.transform(actualWebhookPayload, "workflow_job.queued");
+      expect(result).toBeDefined();
+      expect(result.context.type).toBe("dev.cdevents.pipelinerun.queued.0.2.0");
+      expect(result.subject.id).toBe("github-workflow-job-49565775813");
+      expect(result.subject.content.pipelineName).toBe("Release");
     });
 
     it("should reject invalid webhook data", async () => {
@@ -231,7 +389,6 @@ describe("GitHubAdapter", () => {
           status: "queued",
           conclusion: null,
         },
-        workflow: mockWorkflow,
         repository: mockRepository,
         sender: mockSender,
       };
@@ -262,7 +419,6 @@ describe("GitHubAdapter", () => {
           status: "queued",
           conclusion: null,
         },
-        workflow: mockWorkflow,
         repository: mockRepository,
         sender: mockSender,
       };
@@ -276,7 +432,7 @@ describe("GitHubAdapter", () => {
       expect(result.customData.github).toBeDefined();
       expect(result.customData.github.action).toBe("queued");
       expect(result.customData.github.workflow_job.id).toBe(123456789);
-      expect(result.customData.github.workflow.name).toBe("CI/CD Pipeline");
+      expect(result.customData.github.workflow_job.workflow_name).toBe("CI/CD Pipeline");
       expect(result.customData.github.repository.full_name).toBe(
         "owner/test-repo",
       );
@@ -292,7 +448,6 @@ describe("GitHubAdapter", () => {
           status: "in_progress",
           conclusion: null,
         },
-        workflow: mockWorkflow,
         repository: mockRepository,
         sender: mockSender,
       };
@@ -323,9 +478,7 @@ describe("GitHubAdapter", () => {
           ...mockWorkflowJob,
           status: "completed",
           conclusion: "success",
-          completed_at: "2023-10-01T12:05:00Z",
         },
-        workflow: mockWorkflow,
         repository: mockRepository,
         sender: mockSender,
       };
@@ -356,7 +509,6 @@ describe("GitHubAdapter", () => {
           conclusion: "failure",
           completed_at: "2023-10-01T12:05:00Z",
         },
-        workflow: mockWorkflow,
         repository: mockRepository,
         sender: mockSender,
       };
@@ -393,7 +545,6 @@ describe("GitHubAdapter", () => {
             conclusion: conclusion as any,
             completed_at: "2023-10-01T12:05:00Z",
           },
-          workflow: mockWorkflow,
           repository: mockRepository,
           sender: mockSender,
         };
@@ -404,6 +555,35 @@ describe("GitHubAdapter", () => {
         );
         expect(result.subject.content.outcome).toBe(expectedOutcome);
       }
+    });
+  });
+
+  describe("Workflow Job Waiting Transformation", () => {
+    it("should transform workflow_job.waiting to pipeline run queued CD Event", async () => {
+      const waitingWebhook = {
+        action: "waiting",
+        workflow_job: {
+          ...mockWorkflowJob,
+          status: "waiting",
+          conclusion: null,
+        },
+        repository: mockRepository,
+        sender: mockSender,
+      };
+
+      const result = await adapter.transform(
+        waitingWebhook,
+        "workflow_job.waiting",
+      );
+
+      expect(result).toBeDefined();
+      expect(result.context.type).toBe("dev.cdevents.pipelinerun.queued.0.2.0");
+      expect(result.subject.id).toBe("github-workflow-job-123456789");
+      expect(result.subject.content.pipelineName).toBe("CI/CD Pipeline");
+
+      // Validate the result is a proper CD Event
+      const validation = PipelineRunQueuedEventSchema.safeParse(result);
+      expect(validation.success).toBe(true);
     });
   });
 
