@@ -10,6 +10,12 @@ import {
 import { AdapterResponseSchema, AdapterErrorResponseSchema } from "../base";
 import { ZodAny, z } from "zod";
 
+// Define environment bindings
+type Env = {
+  readonly CI_BUILD_QUEUED?: Queue;
+  readonly EVENTS_BUCKET?: R2Bucket;
+};
+
 // Success response schema for webhook transformations
 const AdapterSuccessResponseSchema = z.object({
   success: z.literal(true),
@@ -20,7 +26,7 @@ const AdapterSuccessResponseSchema = z.object({
 const githubAdapter = new GitHubAdapter();
 
 // GitHub adapter routes
-export const githubRoutes = new OpenAPIHono();
+export const githubRoutes = new OpenAPIHono<{ Bindings: Env }>();
 
 // Workflow job queued webhook route
 const workflowJobQueuedRoute = createRoute({

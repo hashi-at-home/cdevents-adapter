@@ -19,5 +19,14 @@
       "binding": "EVENTS_BUCKET",
       "bucket_name": "brucellino-cd-events"
     }
-  ]
+  ],
+  "queues": {
+    "consumers": [],
+    "producers": [
+      {
+        "binding": "CI_BUILD_QUEUED",
+        "queue": "brucellino-ci-build-queued",
+      }
+    ]
+  }
 }

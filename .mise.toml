@@ -2,6 +2,7 @@
 node = "22.18.0"
 uv = "latest"
 "pipx:Yelp/detect-secrets" = "latest"
+"pipx:detect-secrets" = "latest"
 
 [env]
 NODE_ENV = "development"
