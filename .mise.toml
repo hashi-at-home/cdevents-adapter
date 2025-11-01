@@ -1,5 +1,5 @@
 [tools]
-node = "22.18.0"
+node = "22.21.1"
 uv = "latest"
 "pipx:Yelp/detect-secrets" = "latest"
 "pipx:detect-secrets" = "latest"
