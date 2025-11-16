@@ -1,0 +1,190 @@
+{
+  "branches": [
+    "main",
+    "master"
+  ],
+  "plugins": [
+    [
+      "@semantic-release/commit-analyzer",
+      {
+        "preset": "conventionalcommits",
+        "releaseRules": [
+          {
+            "type": "feat",
+            "release": "minor"
+          },
+          {
+            "type": "fix",
+            "release": "patch"
+          },
+          {
+            "type": "perf",
+            "release": "patch"
+          },
+          {
+            "type": "revert",
+            "release": "patch"
+          },
+          {
+            "type": "docs",
+            "scope": "README",
+            "release": "patch"
+          },
+          {
+            "type": "refactor",
+            "release": "patch"
+          },
+          {
+            "type": "chore",
+            "release": false
+          },
+          {
+            "type": "style",
+            "release": false
+          },
+          {
+            "type": "test",
+            "release": false
+          },
+          {
+            "breaking": true,
+            "release": "major"
+          },
+          {
+            "revert": true,
+            "release": "patch"
+          }
+        ],
+        "parserOpts": {
+          "noteKeywords": [
+            "BREAKING CHANGE",
+            "BREAKING CHANGES",
+            "BREAKING"
+          ]
+        }
+      }
+    ],
+    [
+      "@semantic-release/release-notes-generator",
+      {
+        "preset": "conventionalcommits",
+        "presetConfig": {
+          "types": [
+            {
+              "type": "feat",
+              "section": "✨ Features",
+              "hidden": false
+            },
+            {
+              "type": "fix",
+              "section": "🐛 Bug Fixes",
+              "hidden": false
+            },
+            {
+              "type": "perf",
+              "section": "⚡ Performance Improvements",
+              "hidden": false
+            },
+            {
+              "type": "revert",
+              "section": "⏪ Reverts",
+              "hidden": false
+            },
+            {
+              "type": "docs",
+              "section": "📚 Documentation",
+              "hidden": false
+            },
+            {
+              "type": "style",
+              "section": "💄 Styles",
+              "hidden": false
+            },
+            {
+              "type": "refactor",
+              "section": "♻️ Code Refactoring",
+              "hidden": false
+            },
+            {
+              "type": "test",
+              "section": "✅ Tests",
+              "hidden": false
+            },
+            {
+              "type": "build",
+              "section": "📦 Build System",
+              "hidden": false
+            },
+            {
+              "type": "ci",
+              "section": "👷 CI/CD",
+              "hidden": false
+            },
+            {
+              "type": "chore",
+              "section": "🔧 Chores",
+              "hidden": false
+            }
+          ]
+        }
+      }
+    ],
+    [
+      "@semantic-release/changelog",
+      {
+        "changelogFile": "CHANGELOG.md",
+        "changelogTitle": "# Changelog\n\nAll notable changes to this project will be documented in this file.\n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),\nand this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html)."
+      }
+    ],
+    [
+      "@semantic-release/npm",
+      {
+        "npmPublish": false
+      }
+    ],
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "npm run build && tar -czf dist.tar.gz dist/ && zip -r dist.zip dist/"
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "assets": [
+          {
+            "path": "dist.tar.gz",
+            "name": "cdevents-adapter-${nextRelease.version}.tar.gz",
+            "label": "Distribution (tar.gz)"
+          },
+          {
+            "path": "dist.zip",
+            "name": "cdevents-adapter-${nextRelease.version}.zip",
+            "label": "Distribution (zip)"
+          },
+          {
+            "path": "CHANGELOG.md",
+            "label": "Changelog"
+          }
+        ],
+        "successComment": "🎉 This PR is included in version ${nextRelease.version} 🎉\n\nThe release is available on [GitHub release](${releases[0].url})\n\n<details>\n<summary>Release Notes</summary>\n\n${nextRelease.notes}\n</details>",
+        "failComment": false,
+        "releasedLabels": [
+          "released"
+        ],
+        "addReleases": "top"
+      }
+    ],
+    [
+      "@semantic-release/git",
+      {
+        "assets": [
+          "CHANGELOG.md",
+          "package.json",
+          "package-lock.json"
+        ],
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }
+    ]
+  ]
+}

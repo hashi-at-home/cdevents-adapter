@@ -111,3 +111,71 @@ jobs:
           name: sbom
           path: sbom.json
           retention-days: 30
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    # Only run on main/master branch after CI and security pass
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    needs: [ci, security]
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Fetch full history for semantic-release to analyze commits
+          fetch-depth: 0
+          # Use GitHub App token or PAT to allow pushing tags and releases
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Install mise for tool management
+      - name: Install mise
+        run: |
+          curl https://mise.jdx.dev/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      # Setup tools using mise.toml configuration
+      - name: Setup tools with mise
+        run: |
+          mise install
+          mise reshim
+          eval "$(mise env)"
+
+      # Cache npm dependencies
+      - name: Cache dependencies
+        uses: actions/cache@v4.3.0
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: |
+          eval "$(mise env)"
+          npm ci
+
+      # Install semantic-release and plugins globally for CI
+      - name: Install semantic-release
+        run: |
+          eval "$(mise env)"
+          npm install -g \
+            semantic-release \
+            @semantic-release/changelog \
+            @semantic-release/commit-analyzer \
+            @semantic-release/release-notes-generator \
+            @semantic-release/npm \
+            @semantic-release/github \
+            @semantic-release/git \
+            @semantic-release/exec \
+            conventional-changelog-conventionalcommits
+
+      # Run semantic-release
+      # https://semantic-release.gitbook.io/semantic-release/
+      - name: Create release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          eval "$(mise env)"
+          semantic-release

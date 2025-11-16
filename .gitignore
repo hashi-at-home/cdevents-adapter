@@ -34,3 +34,7 @@ lerna-debug.log*
 .DS_Store
 
 megalinter-reports/
+
+# release artifacts
+dist.tar.gz
+dist.zip
