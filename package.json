@@ -27,6 +27,7 @@
     "vite": "^7.0.0",
     "vite-ssr-components": "^0.5.0",
     "vitest": "^4.0.0",
+    "vitest-environment-miniflare": "^2.14.4",
     "wrangler": "^4.17.0"
   }
 }
