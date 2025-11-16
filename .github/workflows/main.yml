@@ -51,7 +51,7 @@ jobs:
       - name: Install dependencies
         run: |
           eval "$(mise env)"
-          npm ci
+          mise tasks run install
 
       - name: Generate Cloudflare types
         run: |
