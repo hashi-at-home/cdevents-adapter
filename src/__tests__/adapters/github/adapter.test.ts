@@ -182,7 +182,7 @@ describe("GitHubAdapter", () => {
   describe("Adapter Configuration", () => {
     it("should have correct adapter metadata", () => {
       expect(adapter.name).toBe("github");
-      expect(adapter.version).toBe("1.0.0");
+      expect(adapter.version).toMatch(/^\d+\.\d+\.\d+(-\w+)?$/);
       expect(adapter.supportedEvents).toEqual([
         "workflow_job.queued",
         "workflow_job.waiting",

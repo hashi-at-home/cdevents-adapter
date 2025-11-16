@@ -16,9 +16,9 @@ describe("CD Events Adapter API", () => {
         supported_events: any;
         specification: any;
       };
+      expect(json.name).toBe("CD Events Adapter API");
+      expect(json.version).toMatch(/^\d+\.\d+\.\d+(-\w+)?$/);
       expect(json).toMatchObject({
-        name: "CD Events Adapter API",
-        version: "1.0.0",
         description: "API for CD Events schema validation and documentation",
         documentation: {
           openapi: "/openapi.json",
@@ -57,11 +57,9 @@ describe("CD Events Adapter API", () => {
         version: string;
         timestamp: string;
       };
-      expect(json).toMatchObject({
-        status: "healthy",
-        service: "cd-events-adapter",
-        version: "1.0.0",
-      });
+      expect(json.status).toBe("healthy");
+      expect(json.service).toBe("cdevents-adapter");
+      expect(json.version).toMatch(/^\d+\.\d+\.\d+(-\w+)?$/);
       expect(json.timestamp).toMatch(
         /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
       );
@@ -87,10 +85,8 @@ describe("CD Events Adapter API", () => {
       };
       expect(json).toHaveProperty("openapi", "3.0.0");
       expect(json).toHaveProperty("info");
-      expect(json.info).toMatchObject({
-        version: "1.0.0",
-        title: "CD Events Adapter API",
-      });
+      expect(json.info.title).toBe("CD Events Adapter API");
+      expect(json.info.version).toMatch(/^\d+\.\d+\.\d+(-\w+)?$/);
     });
 
     it("should have required OpenAPI structure", async () => {
@@ -185,7 +181,7 @@ describe("CD Events Adapter API", () => {
       };
 
       expect(json.info.title).toBe("CD Events Adapter API");
-      expect(json.info.version).toBe("1.0.0");
+      expect(json.info.version).toMatch(/^\d+\.\d+\.\d+(-\w+)?$/);
       expect(json.info.description).toContain("CD Events");
       expect(json.info.description).toContain("v0.4.1");
 

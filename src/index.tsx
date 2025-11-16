@@ -1,6 +1,7 @@
 import { OpenAPIHono, createRoute } from "@hono/zod-openapi";
 import { swaggerUI } from "@hono/swagger-ui";
 import { githubRoutes } from "./adapters/github/routes";
+import { getVersion, getAppName } from "./version";
 import {
   CDEventSchema,
   CoreCDEventSchema,
@@ -28,7 +29,7 @@ const app = new OpenAPIHono<{ Bindings: Environment }>();
 app.doc("/openapi.json", {
   openapi: "3.0.0",
   info: {
-    version: "1.0.0",
+    version: getVersion(),
     title: "CD Events Adapter API",
     description: `
 # CD Events Adapter API
@@ -126,8 +127,8 @@ app.get("/health", (c) => {
   return c.json({
     status: "healthy",
     timestamp: new Date().toISOString(),
-    service: "cd-events-adapter",
-    version: "1.0.0",
+    service: getAppName(),
+    version: getVersion(),
   });
 });
 
@@ -404,7 +405,7 @@ app.route("/adapters/github", githubRoutes);
 app.get("/", (c) => {
   return c.json({
     name: "CD Events Adapter API",
-    version: "1.0.0",
+    version: getVersion(),
     description: "API for CD Events schema validation and documentation",
     documentation: {
       openapi: "/openapi.json",
@@ -437,7 +438,7 @@ app.get("/", (c) => {
     supported_adapters: {
       github: {
         name: "GitHub Webhooks",
-        version: "1.0.0",
+        version: getVersion(),
         supported_events: [
           "workflow_job.queued",
           "workflow_job.waiting",

@@ -176,10 +176,10 @@ describe("GitHub Adapter API Integration", () => {
       const res = await app.request("/adapters/github/info");
       expect(res.status).toBe(200);
 
-      const json = await res.json();
-      expect(json).toEqual({
-        name: "github",
-        version: "1.0.0",
+      const json = await res.json() as any;
+      expect(json.name).toBe("github");
+      expect(json.version).toMatch(/^\d+\.\d+\.\d+(-\w+)?$/);
+      expect(json).toMatchObject({
         supportedEvents: [
           "workflow_job.queued",
           "workflow_job.waiting",

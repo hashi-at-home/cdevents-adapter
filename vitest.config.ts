@@ -10,19 +10,9 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    // Use node environment with web-like globals
-    environmentOptions: {
-      // Add web-like globals to node environment
-      jsdom: false,
-    },
     setupFiles: ['./test-setup.ts'],
     // Mock Cloudflare-specific globals
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
   },
   resolve: {
     alias: {

@@ -69,9 +69,9 @@ beforeAll(() => {
     }
   }
 
-  if (typeof globalThis.Headers === 'undefined') {
+  if (typeof (globalThis as any).Headers === 'undefined') {
     // @ts-ignore
-    globalThis.Headers = class Headers {
+    (globalThis as any).Headers = class Headers {
       private headers: Record<string, string> = {}
 
       constructor(init?: HeadersInit) {
@@ -159,11 +159,11 @@ beforeAll(() => {
   globalThis.CI_BUILD_QUEUED = mockQueue
 
   // Mock crypto.randomUUID if not available
-  if (!globalThis.crypto?.randomUUID) {
+  if (!(globalThis as any).crypto?.randomUUID) {
     // @ts-ignore
-    globalThis.crypto = globalThis.crypto || {}
+    (globalThis as any).crypto = (globalThis as any).crypto || {};
     // @ts-ignore
-    globalThis.crypto.randomUUID = () => {
+    (globalThis as any).crypto.randomUUID = () => {
       return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
         const r = Math.random() * 16 | 0
         const v = c === 'x' ? r : (r & 0x3 | 0x8)
@@ -173,9 +173,9 @@ beforeAll(() => {
   }
 
   // Set up TextEncoder/TextDecoder if not available
-  if (typeof globalThis.TextEncoder === 'undefined') {
-    const util = require('util')
-    globalThis.TextEncoder = util.TextEncoder
-    globalThis.TextDecoder = util.TextDecoder
+  if (typeof (globalThis as any).TextEncoder === 'undefined') {
+    const util = require('util');
+    (globalThis as any).TextEncoder = util.TextEncoder;
+    (globalThis as any).TextDecoder = util.TextDecoder;
   }
 })

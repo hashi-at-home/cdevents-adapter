@@ -1,5 +1,6 @@
 import { z } from "@hono/zod-openapi";
 import { BaseAdapter, WebhookEventMetadata, AdapterUtils } from "../base";
+import { getVersion } from "../../version";
 import {
   GitHubWorkflowJobWebhookSchema,
   GitHubWorkflowJobQueuedWebhookSchema,
@@ -24,7 +25,7 @@ import {
 
 export class GitHubAdapter extends BaseAdapter {
   readonly name = "github";
-  readonly version = "1.0.0";
+  readonly version = getVersion();
   readonly supportedEvents = [
     "workflow_job.queued",
     "workflow_job.waiting",
