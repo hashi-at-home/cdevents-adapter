@@ -154,7 +154,7 @@ jobs:
       - name: Install dependencies
         run: |
           eval "$(mise env)"
-          npm ci
+          mise tasks run install
 
       # Install semantic-release and plugins globally for CI
       - name: Install semantic-release
