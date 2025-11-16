@@ -20,7 +20,7 @@ import {
 
 type Environment = {
   readonly CI_BUILD_QUEUED: Queue<Error>
-  readonly CI_BUILD_QUEUED_BUCKET: R2Bucket
+  readonly EVENTS_BUCKET?: R2Bucket
 }
 
 const app = new OpenAPIHono<{ Bindings: Environment }>();

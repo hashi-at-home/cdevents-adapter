@@ -25,6 +25,72 @@ const AdapterSuccessResponseSchema = z.object({
 
 const githubAdapter = new GitHubAdapter();
 
+/**
+ * Helper function to log webhook data to R2 storage
+ * @param bucket - The R2 bucket to store the webhook data
+ * @param eventType - The type of GitHub event
+ * @param webhookData - The raw webhook payload from GitHub
+ * @param cdevent - Optional transformed CD event
+ */
+async function logWebhookToR2(
+  bucket: R2Bucket | undefined,
+  eventType: string,
+  webhookData: any,
+  cdevent?: any
+): Promise<void> {
+  // Skip logging if bucket is not configured (e.g., in tests)
+  if (!bucket) {
+    return;
+  }
+
+  try {
+    const timestamp = new Date().toISOString();
+    const date = timestamp.split('T')[0];
+
+    // Generate a unique key for this webhook
+    const webhookId = webhookData.workflow_job?.id ||
+      webhookData.repository?.id ||
+      crypto.randomUUID();
+
+    const key = `github-webhooks/${date}/${eventType}/${webhookId}-${timestamp.replace(/[:.]/g, '-')}.json`;
+
+    // Prepare the log entry
+    const logEntry = {
+      timestamp,
+      eventType,
+      source: 'github',
+      webhook: webhookData,
+      ...(cdevent && { transformedEvent: cdevent }),
+      metadata: {
+        repository: webhookData.repository?.full_name,
+        organization: webhookData.organization?.login,
+        sender: webhookData.sender?.login,
+        workflowJobId: webhookData.workflow_job?.id,
+        workflowJobName: webhookData.workflow_job?.name,
+        runId: webhookData.workflow_job?.run_id,
+        runAttempt: webhookData.workflow_job?.run_attempt,
+      }
+    };
+
+    // Store the log entry in R2
+    await bucket.put(key, JSON.stringify(logEntry, null, 2), {
+      httpMetadata: {
+        contentType: 'application/json',
+      },
+      customMetadata: {
+        eventType,
+        repository: webhookData.repository?.full_name || 'unknown',
+        timestamp,
+      }
+    });
+
+    console.log(`Webhook logged to R2: ${key}`);
+  } catch (error) {
+    console.error('Failed to log webhook to R2:', error);
+    // Don't throw - logging failure shouldn't break the main flow
+  }
+}
+
 // GitHub adapter routes
 export const githubRoutes = new OpenAPIHono<{ Bindings: Env }>();
 
@@ -309,8 +375,14 @@ githubRoutes.openapi(workflowJobQueuedRoute, async (c) => {
     const webhookData = c.req.valid("json");
     const eventType = "workflow_job.queued";
 
+    // Log the incoming webhook to R2
+    await logWebhookToR2(c.env?.EVENTS_BUCKET, eventType, webhookData);
+
     const cdevent = await githubAdapter.transform(webhookData, eventType);
     console.log(JSON.stringify(cdevent));
+
+    // Update the log with the transformed CD event
+    await logWebhookToR2(c.env?.EVENTS_BUCKET, eventType, webhookData, cdevent);
 
     // Forward the CD Event to the validation endpoint
     let validationResult = null;
@@ -350,7 +422,13 @@ githubRoutes.openapi(workflowJobInProgressRoute, async (c) => {
     const webhookData = c.req.valid("json");
     const eventType = "workflow_job.in_progress";
 
+    // Log the incoming webhook to R2
+    await logWebhookToR2(c.env?.EVENTS_BUCKET, eventType, webhookData);
+
     const cdevent = await githubAdapter.transform(webhookData, eventType);
+
+    // Update the log with the transformed CD event
+    await logWebhookToR2(c.env?.EVENTS_BUCKET, eventType, webhookData, cdevent);
 
     // Forward the CD Event to the validation endpoint
     let validationResult = null;
@@ -390,7 +468,13 @@ githubRoutes.openapi(workflowJobCompletedRoute, async (c) => {
     const webhookData = c.req.valid("json");
     const eventType = "workflow_job.completed";
 
+    // Log the incoming webhook to R2
+    await logWebhookToR2(c.env?.EVENTS_BUCKET, eventType, webhookData);
+
     const cdevent = await githubAdapter.transform(webhookData, eventType);
+
+    // Update the log with the transformed CD event
+    await logWebhookToR2(c.env?.EVENTS_BUCKET, eventType, webhookData, cdevent);
 
     // Forward the CD Event to the validation endpoint
     let validationResult = null;
@@ -430,8 +514,14 @@ githubRoutes.openapi(workflowJobWaitingRoute, async (c) => {
     const webhookData = c.req.valid("json");
     const eventType = "workflow_job.waiting";
 
+    // Log the incoming webhook to R2
+    await logWebhookToR2(c.env?.EVENTS_BUCKET, eventType, webhookData);
+
     const cdevent = await githubAdapter.transform(webhookData, eventType);
     console.log(JSON.stringify(cdevent));
+
+    // Update the log with the transformed CD event
+    await logWebhookToR2(c.env?.EVENTS_BUCKET, eventType, webhookData, cdevent);
 
     // Forward the CD Event to the validation endpoint
     let validationResult = null;
@@ -475,6 +565,9 @@ githubRoutes.openapi(workflowJobRoute, async (c) => {
 
     // Check if this is a ping event (ping events don't have an action field)
     if ("zen" in webhookData && "hook_id" in webhookData && !("action" in webhookData)) {
+      // Log the ping webhook to R2
+      await logWebhookToR2(c.env?.EVENTS_BUCKET, "ping", webhookData);
+
       const response = await githubAdapter.transform(webhookData, "ping");
       return c.json({
         success: true as const,
@@ -509,7 +602,13 @@ githubRoutes.openapi(workflowJobRoute, async (c) => {
       );
     }
 
+    // Log the incoming webhook to R2
+    await logWebhookToR2(c.env?.EVENTS_BUCKET, eventType, webhookData);
+
     const cdevent = await githubAdapter.transform(webhookData, eventType);
+
+    // Update the log with the transformed CD event
+    await logWebhookToR2(c.env?.EVENTS_BUCKET, eventType, webhookData, cdevent);
 
     // Forward the CD Event to the validation endpoint
     let validationResult = null;
@@ -554,6 +653,9 @@ githubRoutes.openapi(pingRoute, async (c) => {
   try {
     const webhookData = c.req.valid("json");
     const eventType = "ping";
+
+    // Log the ping webhook to R2
+    await logWebhookToR2(c.env?.EVENTS_BUCKET, eventType, webhookData);
 
     const response = await githubAdapter.transform(webhookData, eventType);
 
