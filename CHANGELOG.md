@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0](https://github.com/hashi-at-home/cdevents-adapter/compare/v1.0.0...v2.0.0) (2025-11-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* deploy in hashiatho.me domain
+
+### 🔧 Chores
+
+* deploy in hashiatho.me domain ([ec13681](https://github.com/hashi-at-home/cdevents-adapter/commit/ec136814a1ef301090625a5e22ccd4601b10d20a))
+* **deps:** update dependency @cloudflare/vite-plugin to v1.14.2 ([77cb0ef](https://github.com/hashi-at-home/cdevents-adapter/commit/77cb0efc4a1b22963e41d7822cfac55ffb456045))
+* **deps:** update dependency hono to v4.10.6 ([bbcc469](https://github.com/hashi-at-home/cdevents-adapter/commit/bbcc469ff6ee3627c3d25aafa60aa942725ea093))
+* rename worker ([1efd3d8](https://github.com/hashi-at-home/cdevents-adapter/commit/1efd3d80fe08a6b256f7bc32bbef64f902e201ba))
+* update dependencies after npm audit fix ([4eb8065](https://github.com/hashi-at-home/cdevents-adapter/commit/4eb8065387012d52711ae406623f4f42387ab56b))
+
 ## 1.0.0 (2025-11-16)
 
 
