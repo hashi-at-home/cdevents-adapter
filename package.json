@@ -39,5 +39,5 @@
     "vitest-environment-miniflare": "^2.12.0",
     "wrangler": "^4.17.0"
   },
-  "version": "2.0.0"
+  "version": "2.0.1"
 }
