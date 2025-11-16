@@ -18,7 +18,7 @@ import {
 } from "./schemas";
 
 type Environment = {
-  readonly CI_BUILD_QUEUED_Q: Queue<Error>
+  readonly CI_BUILD_QUEUED: Queue<Error>
   readonly CI_BUILD_QUEUED_BUCKET: R2Bucket
 }
 
@@ -52,11 +52,14 @@ This API currently supports the following core CD Events:
 - Full TypeScript support with inferred types
 - Strict validation according to CD Events specification
 - OpenAPI 3.0 documentation
-- Extensibility support for custom data
 - RFC 3339 timestamp validation
 - UUID validation for identifiers
 
 ## Usage
+
+Send your github webhooks to the adapter's endpoint.
+The adapter will validate and transform the incoming webhook payload into a relevant CD Event.
+This is then placed on a queue for downstream processing.
 
 Use the schemas provided in this documentation to:
 1. Validate incoming CD Events
