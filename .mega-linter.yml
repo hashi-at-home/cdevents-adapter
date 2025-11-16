@@ -1,5 +1,5 @@
 # MegaLinter configuration file
-# See https://megalinter.io/configuration/ for all available variables
+# See https://megalinter.io/latest/config-file/ for all available variables
 
 # Apply linters configuration
 APPLY_FIXES: none # all, none, or list of linter keys

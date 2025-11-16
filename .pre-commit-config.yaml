@@ -38,14 +38,14 @@ repos:
 
   # MegaLinter for comprehensive code analysis
   - repo: https://github.com/oxsecurity/megalinter
-    rev: v8.8.0
+    rev: v9.1.0
     hooks:
       - id: megalinter-incremental
-        stages: [commit]
+        stages: [pre-commit]
 
   # Conventional commits validation
   - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
-    rev: v9.22.0
+    rev: v9.23.0
     hooks:
       - id: commitlint
         stages: [commit-msg]
@@ -60,4 +60,4 @@ repos:
         language: system
         files: ^package\.json$
         pass_filenames: false
-        stages: [commit]
+        stages: [pre-commit]

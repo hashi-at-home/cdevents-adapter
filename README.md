@@ -1,5 +1,7 @@
 # CD Events Adapter
 
+[![CI](https://github.com/hashi-at-home/cdevents-adapter/actions/workflows/main.yml/badge.svg)](https://github.com/hashi-at-home/cdevents-adapter/actions/workflows/main.yml)
+
 CD Events Adapter built to run on Cloudflare
 
 ## Development environment

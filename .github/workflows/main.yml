@@ -1,0 +1,113 @@
+# Simple CI Workflow
+# Performs build, lint, and test operations for the CDEvents Adapter
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Cancel in-progress runs for the same PR/branch to save resources
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # Install mise for tool management
+      # https://mise.jdx.dev/
+      - name: Install mise
+        run: |
+          curl https://mise.jdx.dev/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      # Setup tools using mise.toml configuration
+      - name: Setup tools with mise
+        run: |
+          mise install
+          mise reshim
+          eval "$(mise env)"
+
+      # Cache npm dependencies for faster builds
+      # https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows
+      - name: Cache dependencies
+        uses: actions/cache@v4.3.0
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: |
+          eval "$(mise env)"
+          npm ci
+
+      - name: Generate Cloudflare types
+        run: |
+          eval "$(mise env)"
+          npm run cf-typegen
+
+      - name: Build
+        run: |
+          eval "$(mise env)"
+          npm run build
+
+      - name: Run tests
+        run: |
+          eval "$(mise env)"
+          npm run test:run
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # Run Trivy security scanner
+      # https://github.com/aquasecurity/trivy-action
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-results.sarif"
+          severity: "CRITICAL,HIGH"
+
+      # Upload results to GitHub Security tab
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-results.sarif"
+
+      # Generate SBOM using Trivy
+      # https://aquasecurity.github.io/trivy/latest/docs/scanner/sbom/
+      - name: Generate SBOM
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          format: "cyclonedx"
+          output: "sbom.json"
+          scan-ref: "."
+
+      - name: Upload SBOM as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.json
+          retention-days: 30
