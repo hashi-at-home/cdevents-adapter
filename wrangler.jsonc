@@ -1,13 +1,13 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "cdevents-adapter-test",
+  "name": "cdevents-adapter",
   "compatibility_date": "2025-08-03",
   "main": "./src/index.tsx",
   "workers_dev": false,
   "routes": [
     {
       "custom_domain": true,
-      "pattern": "cdevents.brucellino.dev"
+      "pattern": "cdevents.hashiatho.me"
     }
   ],
   "observability": {
@@ -17,7 +17,7 @@
   "r2_buckets": [
     {
       "binding": "EVENTS_BUCKET",
-      "bucket_name": "brucellino-cd-events"
+      "bucket_name": "hashiathome-cd-events"
     }
   ],
   "queues": {
@@ -25,7 +25,7 @@
     "producers": [
       {
         "binding": "CI_BUILD_QUEUED",
-        "queue": "brucellino-ci-build-queued",
+        "queue": "hashiathome-ci-build-queued",
       }
     ]
   }
