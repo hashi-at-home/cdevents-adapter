@@ -64,15 +64,15 @@ This is then placed on a queue for downstream processing.
 
 Use the schemas provided in this documentation to:
 1. Validate incoming CD Events
-2. Generate properly formatted CD Events
-3. Ensure compliance with the specification
-4. Integrate with CI/CD systems
+2. Generate properly formatted CD Events from tool-specific webhook payloads
+3. Ensure compliance with the [CDEvents specification](https://cdevents.dev/)
+4. Integrate with CI/CD systems, adapter by adapter.
 
 Visit the [CD Events specification](https://cdevents.dev/) for more information.
     `.trim(),
     contact: {
-      name: "CD Events Community",
-      url: "https://cdevents.dev",
+      name: "Bruce Becker",
+      url: "https://www.brucellino.dev",
     },
     license: {
       name: "Apache 2.0",
@@ -84,6 +84,10 @@ Visit the [CD Events specification](https://cdevents.dev/) for more information.
       url: "http://localhost:8787",
       description: "Development server",
     },
+    {
+      url: "https://cdevents.hashiatho.me",
+      description: "Production server",
+    }
   ],
   tags: [
     {
