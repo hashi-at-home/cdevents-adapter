@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0](https://github.com/hashi-at-home/cdevents-adapter/compare/v2.0.1...v2.1.0) (2025-12-27)
+
+
+### ✨ Features
+
+* add / and /webhook routes, with processing implementation ([b54d405](https://github.com/hashi-at-home/cdevents-adapter/commit/b54d4053c7947f167ff1ae0a305d337ff358e573))
+* log webhooks to r2 ([56f4dbd](https://github.com/hashi-at-home/cdevents-adapter/commit/56f4dbd79e565f0b5ca00f201b42c44bc5285b88))
+
+
+### 🐛 Bug Fixes
+
+* contacts ([9549475](https://github.com/hashi-at-home/cdevents-adapter/commit/95494755d51e9ee8b659c1faa35a49b1d9018d04))
+
+
+### ✅ Tests
+
+* update test to pass on semantic versions instead of hard-coded ([b352f20](https://github.com/hashi-at-home/cdevents-adapter/commit/b352f20ec688b06d2c98dc8d01fd788f49f3a450))
+
+
+### 📦 Build System
+
+* **release:** set tarballDir to string ([f61a983](https://github.com/hashi-at-home/cdevents-adapter/commit/f61a98355260de7bc95cf31bcb821770a7613c99))
+
+
+### 🔧 Chores
+
+* **deps:** update dependency @types/node to v24.10.1 ([a6a540d](https://github.com/hashi-at-home/cdevents-adapter/commit/a6a540d29c6148b3a85213003dde3a91f6ffd82e))
+* **deps:** update dependency python to v3.14.2 ([c66c59b](https://github.com/hashi-at-home/cdevents-adapter/commit/c66c59b96739ab3fa8d8c5ccae9d0d01f769b2ff))
+* **deps:** update dependency vitest-environment-miniflare to v2.14.4 ([5991aed](https://github.com/hashi-at-home/cdevents-adapter/commit/5991aed1136811a30cdc82a1df839defd3f39c56))
+* **deps:** update dependency zod to v4.2.1 ([848c3a8](https://github.com/hashi-at-home/cdevents-adapter/commit/848c3a8aa4193baa19449dba56e949e2402604d2))
+* update docs on the page ([ad0442f](https://github.com/hashi-at-home/cdevents-adapter/commit/ad0442f6aa2a5c1e0266a021fb5810421ee1c616))
+
 ## [2.0.1](https://github.com/hashi-at-home/cdevents-adapter/compare/v2.0.0...v2.0.1) (2025-11-16)
 
 

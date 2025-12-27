@@ -1,6 +1,6 @@
 {
   "name": "cdevents-adapter",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "engines": {
     "npm": ">=10.0.0 <12.0.0",
     "node": ">=22.0.0 <25.0.0"
