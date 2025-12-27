@@ -140,7 +140,7 @@
       "@semantic-release/npm",
       {
         "npmPublish": false,
-        "tarballDir": false
+        "tarballDir": "dist"
       }
     ],
     [
