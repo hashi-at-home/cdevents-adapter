@@ -72,7 +72,7 @@ Visit the [CD Events specification](https://cdevents.dev/) for more information.
     `.trim(),
     contact: {
       name: "Bruce Becker",
-      url: "https://www.brucellino.dev",
+      url: "https://brucellino.dev",
     },
     license: {
       name: "Apache 2.0",
@@ -84,10 +84,6 @@ Visit the [CD Events specification](https://cdevents.dev/) for more information.
       url: "http://localhost:8787",
       description: "Development server",
     },
-    {
-      url: "https://cdevents.hashiatho.me",
-      description: "Production server",
-    }
   ],
   tags: [
     {

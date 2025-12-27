@@ -186,8 +186,8 @@ describe("CD Events Adapter API", () => {
       expect(json.info.description).toContain("v0.4.1");
 
       expect(json.info.contact).toEqual({
-        name: "CD Events Community",
-        url: "https://cdevents.dev",
+        name: "Bruce Becker",
+        url: "https://brucellino.dev",
       });
 
       expect(json.info.license).toEqual({
