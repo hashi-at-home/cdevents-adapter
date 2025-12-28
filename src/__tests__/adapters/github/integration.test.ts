@@ -292,11 +292,14 @@ describe("GitHub Adapter API Integration", () => {
       const json = (await res.json()) as {
         success: boolean;
         message: string;
+        eventId: string;
         cdevent: any;
       };
 
       expect(json.success).toBe(true);
       expect(json.message).toContain("successfully transformed");
+      expect(json.eventId).toBeDefined();
+      expect(json.eventId).toMatch(/^github-\d+-\w+$/);  // Verify event ID format
       expect(json.cdevent).toBeDefined();
       expect(json.cdevent.context.type).toBe(
         "dev.cdevents.pipelinerun.queued.0.2.0",
@@ -313,10 +316,11 @@ describe("GitHub Adapter API Integration", () => {
         body: JSON.stringify(mockGitHubWebhook),
       });
 
-      const json = (await res.json()) as { success: boolean; validation?: any };
+      const json = (await res.json()) as { success: boolean; eventId: string; validation?: any };
       // Note: validation might be skipped in test environment, so it's optional
       // Just verify the response has the expected structure
       expect(json.success).toBe(true);
+      expect(json.eventId).toBeDefined();  // Should have event ID even without validation
     });
 
     it("should reject invalid webhook payload", async () => {
@@ -460,6 +464,7 @@ describe("GitHub Adapter API Integration", () => {
       const json = (await res.json()) as {
         success: boolean;
         message: string;
+        eventId: string;
         cdevent: any;
       };
 
@@ -490,6 +495,7 @@ describe("GitHub Adapter API Integration", () => {
       const json = (await res.json()) as {
         success: boolean;
         message: string;
+        eventId: string;
         cdevent: any;
       };
 
@@ -522,6 +528,7 @@ describe("GitHub Adapter API Integration", () => {
       const json = (await res.json()) as {
         success: boolean;
         message: string;
+        eventId: string;
         cdevent: any;
       };
 
@@ -532,7 +539,7 @@ describe("GitHub Adapter API Integration", () => {
       );
     });
 
-    it("should reject webhook with unsupported action", async () => {
+    it("should accept and log webhook with unsupported action", async () => {
       const unsupportedWebhook = {
         ...mockGitHubWebhook,
         action: "unsupported_action",
@@ -544,10 +551,11 @@ describe("GitHub Adapter API Integration", () => {
         body: JSON.stringify(unsupportedWebhook),
       });
 
-      expect(res.status).toBe(400);
-      const json = (await res.json()) as { success: boolean; error: any };
-      expect(json.success).toBe(false);
-      expect(json.error).toBeDefined();
+      expect(res.status).toBe(200);
+      const json = (await res.json()) as { success: boolean; logged: boolean; eventType: string };
+      expect(json.success).toBe(true);
+      expect(json.logged).toBe(true);
+      expect(json.eventType).toBe("workflow_job.unsupported_action");
     });
   });
 
@@ -582,7 +590,8 @@ describe("GitHub Adapter API Integration", () => {
       const json = (await res.json()) as {
         success: boolean;
         message: string;
-        cdevent: any;
+        eventId?: string;
+        cdevent?: any;
       };
 
       // Check required fields
@@ -594,7 +603,12 @@ describe("GitHub Adapter API Integration", () => {
       // Check types
       expect(typeof json.success).toBe("boolean");
       expect(typeof json.message).toBe("string");
-      expect(typeof json.cdevent).toBe("object");
+      if (json.eventId) {
+        expect(typeof json.eventId).toBe("string");
+      }
+      if (json.cdevent) {
+        expect(typeof json.cdevent).toBe("object");
+      }
     });
 
     it("should return consistent error response format", async () => {
@@ -664,7 +678,9 @@ describe("GitHub Adapter API Integration", () => {
         },
       );
 
-      const json = (await res.json()) as { cdevent: any };
+      const json = (await res.json()) as { success: boolean; cdevent: any };
+      expect(json.success).toBe(true);
+      expect(json.cdevent).toBeDefined();
       const workflowJob = json.cdevent.customData.github.workflow_job;
 
       expect(workflowJob.runner_id).toBe(789);

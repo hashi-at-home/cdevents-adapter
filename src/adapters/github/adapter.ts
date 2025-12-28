@@ -140,7 +140,7 @@ export class GitHubAdapter extends BaseAdapter {
           id: webhook.repository.id,
           name: webhook.repository.name,
           full_name: webhook.repository.full_name,
-          owner: webhook.repository.owner.login,
+          owner: webhook.repository.owner?.login || "unknown",
         },
         sender: {
           login: webhook.sender.login,
@@ -185,7 +185,7 @@ export class GitHubAdapter extends BaseAdapter {
           id: webhook.repository.id,
           name: webhook.repository.name,
           full_name: webhook.repository.full_name,
-          owner: webhook.repository.owner.login,
+          owner: webhook.repository.owner?.login || "unknown",
         },
         sender: {
           login: webhook.sender.login,
@@ -232,7 +232,7 @@ export class GitHubAdapter extends BaseAdapter {
           id: webhook.repository.id,
           name: webhook.repository.name,
           full_name: webhook.repository.full_name,
-          owner: webhook.repository.owner.login,
+          owner: webhook.repository.owner?.login || "unknown",
         },
         sender: {
           login: webhook.sender.login,
@@ -291,7 +291,7 @@ export class GitHubAdapter extends BaseAdapter {
           id: webhook.repository.id,
           name: webhook.repository.name,
           full_name: webhook.repository.full_name,
-          owner: webhook.repository.owner.login,
+          owner: webhook.repository.owner?.login || "unknown",
         },
         sender: {
           login: webhook.sender.login,
@@ -317,7 +317,7 @@ export class GitHubAdapter extends BaseAdapter {
       eventId: baseMetadata.eventId || this.generateEventId(),
       source: AdapterUtils.createSourceUri(
         "github",
-        webhook.repository.owner.login,
+        webhook.repository.owner?.login || "unknown",
         webhook.repository.name,
       ),
       eventType: `workflow_job.${webhook.action}`,

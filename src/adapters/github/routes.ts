@@ -728,7 +728,8 @@ githubRoutes.openapi(workflowJobRoute, async (c) => {
 
     return c.json({
       success: true as const,
-      message: `GitHub workflow job ${action} webhook successfully transformed to CD Event`,
+      message: `GitHub workflow job waiting webhook successfully transformed to CD Event`,
+      eventId: cdevent.context?.id,  // Return the CD event unique ID
       cdevent,
       ...(validationResult && { validation: validationResult }),
     }, 200);
