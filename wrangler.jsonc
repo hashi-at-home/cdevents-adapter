@@ -22,10 +22,19 @@
   ],
   "queues": {
     "consumers": [],
+    // A queue for every event type
     "producers": [
       {
         "binding": "CI_BUILD_QUEUED",
         "queue": "hashiathome-ci-build-queued",
+      },
+      {
+        "binding": "CI_BUILD_STARTED",
+        "queue": "hashiathome-ci-build-started",
+      },
+      {
+        "binding": "CI_BUILD_FINISHED",
+        "queue": "hashiathome-ci-build-finished",
       }
     ]
   }

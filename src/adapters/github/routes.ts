@@ -91,6 +91,39 @@ async function logWebhookToR2(
   }
 }
 
+/**
+ * Helper function to validate a CDEvent against the validation service
+ * @param requestUrl - The current request URL (used to construct validation endpoint)
+ * @param cdevent - The CDEvent to validate
+ * @returns The validation result or null if validation fails/is unavailable
+ */
+async function validateCDEvent(
+  requestUrl: string,
+  cdevent: any
+): Promise<any> {
+  let validationResult = null;
+  try {
+    const validationResponse = await fetch(`${requestUrl.split("/adapters")[0]}/validate/event`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(cdevent),
+    });
+
+    // Check if the response is successful before trying to parse JSON
+    if (validationResponse.ok) {
+      validationResult = await validationResponse.json() as any;
+    } else {
+      // Log the error but don't fail the request
+      console.warn(`CD Event validation failed with status ${validationResponse.status}: ${validationResponse.statusText}`);
+    }
+  } catch (validationError) {
+    // Validation service might not be available in test environment
+    console.warn('CD Event validation skipped:', validationError);
+  }
+
+  return validationResult;
+}
+
 // GitHub adapter routes
 export const githubRoutes = new OpenAPIHono<{ Bindings: Env }>();
 
@@ -466,19 +499,7 @@ githubRoutes.openapi(workflowJobQueuedRoute, async (c) => {
     await logWebhookToR2(c.env?.EVENTS_BUCKET, eventType, webhookData, cdevent);
 
     // Forward the CD Event to the validation endpoint
-    let validationResult = null;
-    try {
-      const validationResponse = await fetch(`${c.req.url.split("/adapters")[0]}/validate/event`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cdevent),
-      });
-
-      validationResult = await validationResponse.json() as any;
-    } catch (validationError) {
-      // Validation service might not be available in test environment
-      console.warn('CD Event validation skipped:', validationError);
-    }
+    const validationResult = await validateCDEvent(c.req.url, cdevent);
 
     // Send to the queue if configured - 2024-12-19
     if (c.env?.CI_BUILD_QUEUED) {
@@ -518,19 +539,7 @@ githubRoutes.openapi(workflowJobInProgressRoute, async (c) => {
     await logWebhookToR2(c.env?.EVENTS_BUCKET, eventType, webhookData, cdevent);
 
     // Forward the CD Event to the validation endpoint
-    let validationResult = null;
-    try {
-      const validationResponse = await fetch(`${c.req.url.split("/adapters")[0]}/validate/event`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cdevent),
-      });
-
-      validationResult = await validationResponse.json() as any;
-    } catch (validationError) {
-      // Validation service might not be available in test environment
-      console.warn('CD Event validation skipped:', validationError);
-    }
+    const validationResult = await validateCDEvent(c.req.url, cdevent);
 
     return c.json({
       success: true as const,
@@ -564,19 +573,7 @@ githubRoutes.openapi(workflowJobCompletedRoute, async (c) => {
     await logWebhookToR2(c.env?.EVENTS_BUCKET, eventType, webhookData, cdevent);
 
     // Forward the CD Event to the validation endpoint
-    let validationResult = null;
-    try {
-      const validationResponse = await fetch(`${c.req.url.split("/adapters")[0]}/validate/event`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cdevent),
-      });
-
-      validationResult = await validationResponse.json() as any;
-    } catch (validationError) {
-      // Validation service might not be available in test environment
-      console.warn('CD Event validation skipped:', validationError);
-    }
+    const validationResult = await validateCDEvent(c.req.url, cdevent);
 
     return c.json({
       success: true as const,
@@ -611,19 +608,7 @@ githubRoutes.openapi(workflowJobWaitingRoute, async (c) => {
     await logWebhookToR2(c.env?.EVENTS_BUCKET, eventType, webhookData, cdevent);
 
     // Forward the CD Event to the validation endpoint
-    let validationResult = null;
-    try {
-      const validationResponse = await fetch(`${c.req.url.split("/adapters")[0]}/validate/event`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cdevent),
-      });
-
-      validationResult = await validationResponse.json() as any;
-    } catch (validationError) {
-      // Validation service might not be available in test environment
-      console.warn('CD Event validation skipped:', validationError);
-    }
+    const validationResult = await validateCDEvent(c.req.url, cdevent);
 
     // Send to the queue if configured - 2024-12-19
     // workflow_job.waiting events also represent queued work
@@ -705,19 +690,7 @@ githubRoutes.openapi(workflowJobRoute, async (c) => {
     await logWebhookToR2(c.env?.EVENTS_BUCKET, eventType, webhookData, cdevent);
 
     // Forward the CD Event to the validation endpoint
-    let validationResult = null;
-    try {
-      const validationResponse = await fetch(`${c.req.url.split("/adapters")[0]}/validate/event`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cdevent),
-      });
-
-      validationResult = await validationResponse.json() as any;
-    } catch (validationError) {
-      // Validation service might not be available in test environment
-      console.warn('CD Event validation skipped:', validationError);
-    }
+    const validationResult = await validateCDEvent(c.req.url, cdevent);
 
     // if this is a queued or waiting event, put the cdevent on the queue - 2024-12-19
     // Both queued and waiting represent work that needs to be processed
@@ -807,17 +780,10 @@ githubRoutes.openapi(genericWebhookRoute, async (c) => {
           console.log('CD Event sent to CI_BUILD_QUEUED queue');
         }
 
-        // Validate the CD Event
-        try {
-          const validationResponse = await fetch(`${c.req.url.split("/adapters")[0]}/validate/event`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(cdevent),
-          });
-          const validationResult = await validationResponse.json() as any;
+        // Validate the CD event
+        const validationResult = await validateCDEvent(c.req.url, cdevent);
+        if (validationResult) {
           console.log('CD Event validation result:', validationResult);
-        } catch (validationError) {
-          console.warn('CD Event validation skipped:', validationError);
         }
 
         transformationMessage = `${eventType} transformed to CD Event and queued`;
