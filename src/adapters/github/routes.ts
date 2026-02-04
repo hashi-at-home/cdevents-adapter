@@ -1,14 +1,15 @@
-import { OpenAPIHono, createRoute } from "@hono/zod-openapi";
-import { GitHubAdapter } from "./adapter";
+import { OpenAPIHono, createRoute } from '@hono/zod-openapi';
+import { GitHubAdapter } from './adapter';
 import {
   GitHubWorkflowJobQueuedWebhookSchema,
   GitHubWorkflowJobWaitingWebhookSchema,
   GitHubWorkflowJobInProgressWebhookSchema,
   GitHubWorkflowJobCompletedWebhookSchema,
   GitHubPingWebhookSchema,
-} from "./schemas";
-import { AdapterResponseSchema, AdapterErrorResponseSchema } from "../base";
-import { z } from "zod";
+  GitHubWorkflowJobWebhookSchema,
+} from './schemas';
+import { AdapterResponseSchema, AdapterErrorResponseSchema } from '../base';
+import { z } from 'zod';
 
 // Define environment bindings
 type Env = {
@@ -48,7 +49,8 @@ async function logWebhookToR2(
     const date = timestamp.split('T')[0];
 
     // Generate a unique key for this webhook
-    const webhookId = webhookData.workflow_job?.id ||
+    const webhookId =
+      webhookData.workflow_job?.id ||
       webhookData.repository?.id ||
       crypto.randomUUID();
 
@@ -69,7 +71,7 @@ async function logWebhookToR2(
         workflowJobName: webhookData.workflow_job?.name,
         runId: webhookData.workflow_job?.run_id,
         runAttempt: webhookData.workflow_job?.run_attempt,
-      }
+      },
     };
 
     // Store the log entry in R2
@@ -81,7 +83,7 @@ async function logWebhookToR2(
         eventType,
         repository: webhookData.repository?.full_name || 'unknown',
         timestamp,
-      }
+      },
     });
 
     console.log(`Webhook logged to R2: ${key}`);
@@ -97,24 +99,26 @@ async function logWebhookToR2(
  * @param cdevent - The CDEvent to validate
  * @returns The validation result or null if validation fails/is unavailable
  */
-async function validateCDEvent(
-  requestUrl: string,
-  cdevent: any
-): Promise<any> {
+async function validateCDEvent(requestUrl: string, cdevent: any): Promise<any> {
   let validationResult = null;
   try {
-    const validationResponse = await fetch(`${requestUrl.split("/adapters")[0]}/validate/event`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(cdevent),
-    });
+    const validationResponse = await fetch(
+      `${requestUrl.split('/adapters')[0]}/validate/event`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cdevent),
+      }
+    );
 
     // Check if the response is successful before trying to parse JSON
     if (validationResponse.ok) {
-      validationResult = await validationResponse.json() as any;
+      validationResult = (await validationResponse.json()) as any;
     } else {
       // Log the error but don't fail the request
-      console.warn(`CD Event validation failed with status ${validationResponse.status}: ${validationResponse.statusText}`);
+      console.warn(
+        `CD Event validation failed with status ${validationResponse.status}: ${validationResponse.statusText}`
+      );
     }
   } catch (validationError) {
     // Validation service might not be available in test environment
@@ -129,45 +133,45 @@ export const githubRoutes = new OpenAPIHono<{ Bindings: Env }>();
 
 // The generic github adapter route
 const githubWebhookRoute = createRoute({
-  method: "post",
-  path: "/",
+  method: 'post',
+  path: '/',
   request: {
     body: {
       content: {
-        "application/json": {
-          schema: z.any()
-        }
-      }
-    }
+        'application/json': {
+          schema: z.any(),
+        },
+      },
+    },
   },
   responses: {
     200: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: z.any(),
         },
       },
-      description: "Successfully received Github webhook",
+      description: 'Successfully received Github webhook',
     },
     400: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: z.any(),
         },
       },
-      description: "Invalid request body",
-    }
-  }
-})
+      description: 'Invalid request body',
+    },
+  },
+});
 
 // Workflow job queued webhook route
 const workflowJobQueuedRoute = createRoute({
-  method: "post",
-  path: "/workflow_job/queued",
+  method: 'post',
+  path: '/workflow_job/queued',
   request: {
     body: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: GitHubWorkflowJobQueuedWebhookSchema,
         },
       },
@@ -176,23 +180,23 @@ const workflowJobQueuedRoute = createRoute({
   responses: {
     200: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: AdapterSuccessResponseSchema,
         },
       },
-      description: "Successfully transformed GitHub webhook to CD Event",
+      description: 'Successfully transformed GitHub webhook to CD Event',
     },
     400: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: AdapterErrorResponseSchema,
         },
       },
-      description: "Invalid webhook payload or transformation error",
+      description: 'Invalid webhook payload or transformation error',
     },
   },
-  tags: ["GitHub Adapter"],
-  summary: "Transform GitHub workflow job queued webhook to CD Event",
+  tags: ['GitHub Adapter'],
+  summary: 'Transform GitHub workflow job queued webhook to CD Event',
   description: `
 Transform a GitHub workflow_job.queued webhook payload into a CD Events pipeline run queued event.
 This endpoint accepts GitHub webhook payloads and converts them to compliant CD Events format.
@@ -202,12 +206,12 @@ The resulting event is automatically validated and can be forwarded to CD Events
 
 // Workflow job waiting webhook route
 const workflowJobWaitingRoute = createRoute({
-  method: "post",
-  path: "/workflow_job/waiting",
+  method: 'post',
+  path: '/workflow_job/waiting',
   request: {
     body: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: GitHubWorkflowJobWaitingWebhookSchema,
         },
       },
@@ -216,23 +220,23 @@ const workflowJobWaitingRoute = createRoute({
   responses: {
     200: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: AdapterSuccessResponseSchema,
         },
       },
-      description: "Successfully transformed GitHub webhook to CD Event",
+      description: 'Successfully transformed GitHub webhook to CD Event',
     },
     400: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: AdapterErrorResponseSchema,
         },
       },
-      description: "Invalid webhook payload or transformation error",
+      description: 'Invalid webhook payload or transformation error',
     },
   },
-  tags: ["GitHub Adapter"],
-  summary: "Transform GitHub workflow job waiting webhook to CD Event",
+  tags: ['GitHub Adapter'],
+  summary: 'Transform GitHub workflow job waiting webhook to CD Event',
   description: `
 Transform a GitHub workflow_job.waiting webhook payload into a CD Events pipeline run queued event.
 This endpoint accepts GitHub webhook payloads and converts them to compliant CD Events format.
@@ -242,12 +246,12 @@ The resulting event is automatically validated and can be forwarded to CD Events
 
 // Workflow job in progress webhook route
 const workflowJobInProgressRoute = createRoute({
-  method: "post",
-  path: "/workflow_job/in_progress",
+  method: 'post',
+  path: '/workflow_job/in_progress',
   request: {
     body: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: GitHubWorkflowJobInProgressWebhookSchema,
         },
       },
@@ -256,23 +260,23 @@ const workflowJobInProgressRoute = createRoute({
   responses: {
     200: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: AdapterSuccessResponseSchema,
         },
       },
-      description: "Successfully transformed GitHub webhook to CD Event",
+      description: 'Successfully transformed GitHub webhook to CD Event',
     },
     400: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: AdapterErrorResponseSchema,
         },
       },
-      description: "Invalid webhook payload or transformation error",
+      description: 'Invalid webhook payload or transformation error',
     },
   },
-  tags: ["GitHub Adapter"],
-  summary: "Transform GitHub workflow job in progress webhook to CD Event",
+  tags: ['GitHub Adapter'],
+  summary: 'Transform GitHub workflow job in progress webhook to CD Event',
   description: `
 Transform a GitHub workflow_job.in_progress webhook payload into a CD Events pipeline run started event.
 This endpoint accepts GitHub webhook payloads and converts them to compliant CD Events format.
@@ -282,12 +286,12 @@ The resulting event is automatically validated and can be forwarded to CD Events
 
 // Workflow job completed webhook route
 const workflowJobCompletedRoute = createRoute({
-  method: "post",
-  path: "/workflow_job/completed",
+  method: 'post',
+  path: '/workflow_job/completed',
   request: {
     body: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: GitHubWorkflowJobCompletedWebhookSchema,
         },
       },
@@ -296,23 +300,23 @@ const workflowJobCompletedRoute = createRoute({
   responses: {
     200: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: AdapterSuccessResponseSchema,
         },
       },
-      description: "Successfully transformed GitHub webhook to CD Event",
+      description: 'Successfully transformed GitHub webhook to CD Event',
     },
     400: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: AdapterErrorResponseSchema,
         },
       },
-      description: "Invalid webhook payload or transformation error",
+      description: 'Invalid webhook payload or transformation error',
     },
   },
-  tags: ["GitHub Adapter"],
-  summary: "Transform GitHub workflow job completed webhook to CD Event",
+  tags: ['GitHub Adapter'],
+  summary: 'Transform GitHub workflow job completed webhook to CD Event',
   description: `
 Transform a GitHub workflow_job.completed webhook payload into a CD Events pipeline run finished event.
 This endpoint accepts GitHub webhook payloads and converts them to compliant CD Events format.
@@ -322,15 +326,20 @@ The resulting event is automatically validated and can be forwarded to CD Events
 
 // Generic workflow job webhook route (routes to specific endpoints)
 const workflowJobRoute = createRoute({
-  method: "post",
-  path: "/workflow_job",
+  method: 'post',
+  path: '/workflow_job',
   request: {
     body: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: GitHubWorkflowJobQueuedWebhookSchema.or(
             GitHubWorkflowJobWaitingWebhookSchema
-          ).or(GitHubWorkflowJobInProgressWebhookSchema).or(GitHubWorkflowJobCompletedWebhookSchema).or(GitHubPingWebhookSchema),
+          )
+            .or(GitHubWorkflowJobInProgressWebhookSchema)
+            .or(GitHubWorkflowJobCompletedWebhookSchema)
+            .or(GitHubPingWebhookSchema)
+            .or(GitHubWorkflowJobWebhookSchema), // The default webhook schema
+          // .passhthrough(),
         },
       },
     },
@@ -338,23 +347,23 @@ const workflowJobRoute = createRoute({
   responses: {
     200: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: AdapterSuccessResponseSchema,
         },
       },
-      description: "Successfully transformed GitHub webhook to CD Event",
+      description: 'Successfully transformed GitHub webhook to CD Event',
     },
     400: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: AdapterErrorResponseSchema,
         },
       },
-      description: "Invalid webhook payload or transformation error",
+      description: 'Invalid webhook payload or transformation error',
     },
   },
-  tags: ["GitHub Adapter"],
-  summary: "Route GitHub workflow job webhook to specific endpoint",
+  tags: ['GitHub Adapter'],
+  summary: 'Route GitHub workflow job webhook to specific endpoint',
   description: `
 Routes GitHub workflow_job webhook payloads to the appropriate specific endpoint based on action type.
 This endpoint auto-detects the action type from the payload and redirects to the correct specific endpoint.
@@ -364,12 +373,12 @@ Supports queued, waiting, in_progress, and completed actions, as well as ping ev
 
 // Ping webhook route
 const pingRoute = createRoute({
-  method: "post",
-  path: "/ping",
+  method: 'post',
+  path: '/ping',
   request: {
     body: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: GitHubPingWebhookSchema,
         },
       },
@@ -378,23 +387,23 @@ const pingRoute = createRoute({
   responses: {
     200: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: AdapterSuccessResponseSchema,
         },
       },
-      description: "Ping webhook received successfully",
+      description: 'Ping webhook received successfully',
     },
     400: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: AdapterErrorResponseSchema,
         },
       },
-      description: "Invalid ping payload",
+      description: 'Invalid ping payload',
     },
   },
-  tags: ["GitHub Adapter"],
-  summary: "Handle GitHub webhook ping event",
+  tags: ['GitHub Adapter'],
+  summary: 'Handle GitHub webhook ping event',
   description: `
 Handle GitHub webhook ping events sent when a webhook is first created.
 This endpoint validates that the webhook is properly configured and responds with a success message.
@@ -404,12 +413,12 @@ No CD Events are generated for ping events as they are purely for webhook valida
 
 // Adapter info route
 const adapterInfoRoute = createRoute({
-  method: "get",
-  path: "/info",
+  method: 'get',
+  path: '/info',
   responses: {
     200: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: z.object({
             name: z.string(),
             version: z.string(),
@@ -428,22 +437,23 @@ const adapterInfoRoute = createRoute({
           }),
         },
       },
-      description: "GitHub adapter information",
+      description: 'GitHub adapter information',
     },
   },
-  tags: ["GitHub Adapter"],
-  summary: "Get GitHub adapter information",
-  description: "Returns information about the GitHub adapter including supported events and endpoints.",
+  tags: ['GitHub Adapter'],
+  summary: 'Get GitHub adapter information',
+  description:
+    'Returns information about the GitHub adapter including supported events and endpoints.',
 });
 
 // Generic webhook handler route - 2024-12-19: Added to handle arbitrary GitHub webhooks
 const genericWebhookRoute = createRoute({
-  method: "post",
-  path: "/webhook",
+  method: 'post',
+  path: '/webhook',
   request: {
     body: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: z.any(), // Accept any JSON payload for now
         },
       },
@@ -452,7 +462,7 @@ const genericWebhookRoute = createRoute({
   responses: {
     200: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: z.object({
             success: z.literal(true),
             message: z.string(),
@@ -462,19 +472,19 @@ const genericWebhookRoute = createRoute({
           }),
         },
       },
-      description: "Webhook successfully received and logged",
+      description: 'Webhook successfully received and logged',
     },
     400: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: AdapterErrorResponseSchema,
         },
       },
-      description: "Invalid webhook payload",
+      description: 'Invalid webhook payload',
     },
   },
-  tags: ["GitHub Adapter"],
-  summary: "Handle arbitrary GitHub webhooks",
+  tags: ['GitHub Adapter'],
+  summary: 'Handle arbitrary GitHub webhooks',
   description: `
 Receives any GitHub webhook event and routes it based on event type.
 - workflow_job.queued and workflow_job.waiting events are transformed to CD Events format and sent to queue
@@ -484,10 +494,10 @@ The webhook is stored in R2 with metadata for auditing and replay.
 });
 
 // Register route handlers
-githubRoutes.openapi(workflowJobQueuedRoute, async (c) => {
+githubRoutes.openapi(workflowJobQueuedRoute, async c => {
   try {
-    const webhookData = c.req.valid("json");
-    const eventType = "workflow_job.queued";
+    const webhookData = c.req.valid('json');
+    const eventType = 'workflow_job.queued';
 
     // Log the incoming webhook to R2
     await logWebhookToR2(c.env?.EVENTS_BUCKET, eventType, webhookData);
@@ -507,28 +517,33 @@ githubRoutes.openapi(workflowJobQueuedRoute, async (c) => {
       console.log('CD Event sent to CI_BUILD_QUEUED queue');
     }
 
-    return c.json({
-      success: true as const,
-      message: "GitHub workflow job queued webhook successfully transformed to CD Event",
-      cdevent,
-      ...(validationResult && { validation: validationResult }),
-    }, 200);
+    return c.json(
+      {
+        success: true as const,
+        message:
+          'GitHub workflow job queued webhook successfully transformed to CD Event',
+        eventId: cdevent.context?.id, // Return the CD event unique ID
+        cdevent,
+        ...(validationResult && { validation: validationResult }),
+      },
+      200
+    );
   } catch (error) {
     return c.json(
       {
         success: false as const,
-        message: "Failed to transform webhook",
-        errors: [error instanceof Error ? error.message : "Unknown error"],
+        message: 'Failed to transform webhook',
+        errors: [error instanceof Error ? error.message : 'Unknown error'],
       },
       400
     );
   }
 });
 
-githubRoutes.openapi(workflowJobInProgressRoute, async (c) => {
+githubRoutes.openapi(workflowJobInProgressRoute, async c => {
   try {
-    const webhookData = c.req.valid("json");
-    const eventType = "workflow_job.in_progress";
+    const webhookData = c.req.valid('json');
+    const eventType = 'workflow_job.in_progress';
 
     // Log the incoming webhook to R2
     await logWebhookToR2(c.env?.EVENTS_BUCKET, eventType, webhookData);
@@ -541,28 +556,32 @@ githubRoutes.openapi(workflowJobInProgressRoute, async (c) => {
     // Forward the CD Event to the validation endpoint
     const validationResult = await validateCDEvent(c.req.url, cdevent);
 
-    return c.json({
-      success: true as const,
-      message: "GitHub workflow job in progress webhook successfully transformed to CD Event",
-      cdevent,
-      ...(validationResult && { validation: validationResult }),
-    }, 200);
+    return c.json(
+      {
+        success: true as const,
+        message:
+          'GitHub workflow job in progress webhook successfully transformed to CD Event',
+        cdevent,
+        ...(validationResult && { validation: validationResult }),
+      },
+      200
+    );
   } catch (error) {
     return c.json(
       {
         success: false as const,
-        message: "Failed to transform webhook",
-        errors: [error instanceof Error ? error.message : "Unknown error"],
+        message: 'Failed to transform webhook',
+        errors: [error instanceof Error ? error.message : 'Unknown error'],
       },
       400
     );
   }
 });
 
-githubRoutes.openapi(workflowJobCompletedRoute, async (c) => {
+githubRoutes.openapi(workflowJobCompletedRoute, async c => {
   try {
-    const webhookData = c.req.valid("json");
-    const eventType = "workflow_job.completed";
+    const webhookData = c.req.valid('json');
+    const eventType = 'workflow_job.completed';
 
     // Log the incoming webhook to R2
     await logWebhookToR2(c.env?.EVENTS_BUCKET, eventType, webhookData);
@@ -575,28 +594,32 @@ githubRoutes.openapi(workflowJobCompletedRoute, async (c) => {
     // Forward the CD Event to the validation endpoint
     const validationResult = await validateCDEvent(c.req.url, cdevent);
 
-    return c.json({
-      success: true as const,
-      message: "GitHub workflow job completed webhook successfully transformed to CD Event",
-      cdevent,
-      ...(validationResult && { validation: validationResult }),
-    }, 200);
+    return c.json(
+      {
+        success: true as const,
+        message:
+          'GitHub workflow job completed webhook successfully transformed to CD Event',
+        cdevent,
+        ...(validationResult && { validation: validationResult }),
+      },
+      200
+    );
   } catch (error) {
     return c.json(
       {
         success: false as const,
-        message: "Failed to transform webhook",
-        errors: [error instanceof Error ? error.message : "Unknown error"],
+        message: 'Failed to transform webhook',
+        errors: [error instanceof Error ? error.message : 'Unknown error'],
       },
       400
     );
   }
 });
 
-githubRoutes.openapi(workflowJobWaitingRoute, async (c) => {
+githubRoutes.openapi(workflowJobWaitingRoute, async c => {
   try {
-    const webhookData = c.req.valid("json");
-    const eventType = "workflow_job.waiting";
+    const webhookData = c.req.valid('json');
+    const eventType = 'workflow_job.waiting';
 
     // Log the incoming webhook to R2
     await logWebhookToR2(c.env?.EVENTS_BUCKET, eventType, webhookData);
@@ -617,68 +640,86 @@ githubRoutes.openapi(workflowJobWaitingRoute, async (c) => {
       console.log('CD Event sent to CI_BUILD_QUEUED queue');
     }
 
-    return c.json({
-      success: true as const,
-      message: "GitHub workflow job waiting webhook successfully transformed to CD Event",
-      cdevent,
-      ...(validationResult && { validation: validationResult }),
-    }, 200);
+    return c.json(
+      {
+        success: true as const,
+        message:
+          'GitHub workflow job waiting webhook successfully transformed to CD Event',
+        cdevent,
+        ...(validationResult && { validation: validationResult }),
+      },
+      200
+    );
   } catch (error) {
     return c.json(
       {
         success: false as const,
-        message: "Failed to transform webhook",
-        errors: [error instanceof Error ? error.message : "Unknown error"],
+        message: 'Failed to transform webhook',
+        errors: [error instanceof Error ? error.message : 'Unknown error'],
       },
       400
     );
   }
 });
 
-githubRoutes.openapi(workflowJobRoute, async (c) => {
+githubRoutes.openapi(workflowJobRoute, async c => {
   try {
     // webhookData should be a valid github webhook payload
     // either a ping event or a workflow job event
-    const webhookData = c.req.valid("json") as any;
-    console.log("received webhook event")
+    const webhookData = c.req.valid('json') as any;
+    console.log('received webhook event');
+    console.log('Webhook action:', webhookData.action);
 
     // Check if this is a ping event (ping events don't have an action field)
-    if ("zen" in webhookData && "hook_id" in webhookData && !("action" in webhookData)) {
+    if (
+      'zen' in webhookData &&
+      'hook_id' in webhookData &&
+      !('action' in webhookData)
+    ) {
       // Log the ping webhook to R2
-      await logWebhookToR2(c.env?.EVENTS_BUCKET, "ping", webhookData);
+      await logWebhookToR2(c.env?.EVENTS_BUCKET, 'ping', webhookData);
 
-      const response = await githubAdapter.transform(webhookData, "ping");
-      return c.json({
-        success: true as const,
-        message: "GitHub webhook ping received successfully",
-        ...response,
-      }, 200);
+      const response = await githubAdapter.transform(webhookData, 'ping');
+      return c.json(
+        {
+          success: true as const,
+          message: 'GitHub webhook ping received successfully',
+          ...response,
+        },
+        200
+      );
     }
 
-    if (!("action" in webhookData)) {
+    if (!('action' in webhookData)) {
       return c.json(
         {
           success: false as const,
-          message: "Invalid webhook payload: missing action field",
-          errors: ["Webhook payload must contain an action field"],
+          logged: true as const,
+          message: 'Invalid webhook payload: missing action field',
+          errors: ['Webhook payload must contain an action field'],
         },
         400
       );
     }
 
     const action = webhookData.action;
+    console.log(`ACtion is ${action}`);
     const eventType = `workflow_job.${action}`;
 
     // Validate action is supported
     if (!['queued', 'waiting', 'in_progress', 'completed'].includes(action)) {
-      return c.json(
-        {
-          success: false as const,
-          message: `Unsupported action: ${action}`,
-          errors: [`Action '${action}' is not supported. Supported actions: queued, waiting, in_progress, completed`],
-        },
-        400
-      );
+      await logWebhookToR2(c.env?.EVENTS_BUCKET, eventType, webhookData);
+      const response = {
+        success: false as const,
+        logged: true as const,
+        eventType: eventType,
+        message: `Unsupported action: ${action}`,
+        errors: [
+          `Action '${action}' is not supported. Supported actions: queued, waiting, in_progress, completed`,
+        ],
+      };
+      console.log('Unsupported action response:', JSON.stringify(response));
+      return c.json(response, 400);
     }
 
     // Log the incoming webhook to R2
@@ -694,51 +735,63 @@ githubRoutes.openapi(workflowJobRoute, async (c) => {
 
     // if this is a queued or waiting event, put the cdevent on the queue - 2024-12-19
     // Both queued and waiting represent work that needs to be processed
-    if ((action === 'queued' || action === 'waiting') && c.env?.CI_BUILD_QUEUED) {
+    if (
+      (action === 'queued' || action === 'waiting') &&
+      c.env?.CI_BUILD_QUEUED
+    ) {
       await c.env.CI_BUILD_QUEUED.send(cdevent);
       console.log('CD Event sent to CI_BUILD_QUEUED queue');
     }
 
-    return c.json({
-      success: true as const,
-      message: `GitHub workflow job waiting webhook successfully transformed to CD Event`,
-      eventId: cdevent.context?.id,  // Return the CD event unique ID
-      cdevent,
-      ...(validationResult && { validation: validationResult }),
-    }, 200);
+    return c.json(
+      {
+        success: true as const,
+        logged: true as const,
+        message: `GitHub workflow job waiting webhook successfully transformed to CD Event`,
+        eventId: cdevent.context?.id, // Return the CD event unique ID
+        cdevent,
+        ...(validationResult && { validation: validationResult }),
+      },
+      200
+    );
   } catch (error) {
     return c.json(
       {
         success: false as const,
-        message: "Failed to transform webhook",
-        errors: [error instanceof Error ? error.message : "Unknown error"],
+        logged: true as const,
+        message: 'Failed to transform webhook',
+        errors: [error instanceof Error ? error.message : 'Unknown error'],
       },
       400
     );
   }
 });
 
-githubRoutes.openapi(pingRoute, async (c) => {
+githubRoutes.openapi(pingRoute, async c => {
   try {
-    const webhookData = c.req.valid("json");
-    const eventType = "ping";
+    const webhookData = c.req.valid('json');
+    const eventType = 'ping';
 
     // Log the ping webhook to R2
     await logWebhookToR2(c.env?.EVENTS_BUCKET, eventType, webhookData);
 
     const response = await githubAdapter.transform(webhookData, eventType);
 
-    return c.json({
-      success: true as const,
-      message: "GitHub webhook ping received successfully",
-      ...response,
-    }, 200);
+    return c.json(
+      {
+        success: true as const,
+        logged: true as const,
+        message: 'GitHub webhook ping received successfully',
+        ...response,
+      },
+      200
+    );
   } catch (error) {
     return c.json(
       {
         success: false as const,
-        message: "Failed to handle ping webhook",
-        errors: [error instanceof Error ? error.message : "Unknown error"],
+        message: 'Failed to handle ping webhook',
+        errors: [error instanceof Error ? error.message : 'Unknown error'],
       },
       400
     );
@@ -746,21 +799,24 @@ githubRoutes.openapi(pingRoute, async (c) => {
 });
 
 // Generic webhook handler - 2024-12-19: Routes webhooks based on event type
-githubRoutes.openapi(genericWebhookRoute, async (c) => {
+githubRoutes.openapi(genericWebhookRoute, async c => {
   try {
-    const webhookData = c.req.valid("json") as any;
+    const webhookData = c.req.valid('json') as any;
 
     // Detect the event type from GitHub headers or webhook payload
-    const githubEvent = c.req.header("X-GitHub-Event") || "unknown";
-    const githubDelivery = c.req.header("X-GitHub-Delivery") || crypto.randomUUID();
+    const githubEvent = c.req.header('X-GitHub-Event') || 'unknown';
+    const githubDelivery =
+      c.req.header('X-GitHub-Delivery') || crypto.randomUUID();
 
     // For workflow_job events, include the action in the event type
     let eventType = githubEvent;
-    if (githubEvent === "workflow_job" && webhookData.action) {
+    if (githubEvent === 'workflow_job' && webhookData.action) {
       eventType = `${githubEvent}.${webhookData.action}`;
     }
 
-    console.log(`Received GitHub webhook: ${eventType} (delivery: ${githubDelivery})`);
+    console.log(
+      `Received GitHub webhook: ${eventType} (delivery: ${githubDelivery})`
+    );
 
     // Initialize variables for CD Event transformation
     let cdevent = null;
@@ -768,11 +824,17 @@ githubRoutes.openapi(genericWebhookRoute, async (c) => {
 
     // Route workflow_job.queued and workflow_job.waiting events to the CD Events adapter
     // Both represent queued work that should be transformed to CD Events
-    if (eventType === "workflow_job.queued" || eventType === "workflow_job.waiting") {
+    if (
+      eventType === 'workflow_job.queued' ||
+      eventType === 'workflow_job.waiting'
+    ) {
       try {
         // Transform to CD Event using the existing adapter
         cdevent = await githubAdapter.transform(webhookData, eventType);
-        console.log(`Transformed ${eventType} to CD Event:`, JSON.stringify(cdevent));
+        console.log(
+          `Transformed ${eventType} to CD Event:`,
+          JSON.stringify(cdevent)
+        );
 
         // Send to the queue if configured
         if (c.env?.CI_BUILD_QUEUED) {
@@ -788,7 +850,10 @@ githubRoutes.openapi(genericWebhookRoute, async (c) => {
 
         transformationMessage = `${eventType} transformed to CD Event and queued`;
       } catch (transformError) {
-        console.error(`Failed to transform ${eventType} to CD Event:`, transformError);
+        console.error(
+          `Failed to transform ${eventType} to CD Event:`,
+          transformError
+        );
         transformationMessage = `${eventType} transformation failed, logged as-is`;
         // Continue to log the webhook even if transformation fails
       }
@@ -830,7 +895,7 @@ githubRoutes.openapi(genericWebhookRoute, async (c) => {
             issueNumber: webhookData.issue.number,
             issueTitle: webhookData.issue.title,
           }),
-        }
+        },
       };
 
       await c.env.EVENTS_BUCKET.put(key, JSON.stringify(logEntry, null, 2), {
@@ -843,52 +908,57 @@ githubRoutes.openapi(genericWebhookRoute, async (c) => {
           githubDelivery,
           repository: webhookData.repository?.full_name || 'unknown',
           timestamp,
-        }
+        },
       });
 
       console.log(`Webhook logged to R2: ${key}`);
     }
 
     // Return success response with appropriate message
-    const message = transformationMessage ||
+    const message =
+      transformationMessage ||
       `GitHub ${eventType} webhook received and logged`;
 
-    return c.json({
-      success: true as const,
-      message,
-      eventType,
-      logged: true,
-      ...(cdevent && { cdevent }), // Include CD Event if transformation occurred
-    }, 200);
-
+    return c.json(
+      {
+        success: true as const,
+        message,
+        eventType,
+        logged: true,
+        ...(cdevent && { cdevent }), // Include CD Event if transformation occurred
+      },
+      200
+    );
   } catch (error) {
     console.error('Failed to handle generic webhook:', error);
     return c.json(
       {
         success: false as const,
-        message: "Failed to process webhook",
-        errors: [error instanceof Error ? error.message : "Unknown error"],
+        logged: true,
+        message: 'Failed to process webhook',
+        errors: [error instanceof Error ? error.message : 'Unknown error'],
       },
       400
     );
   }
 });
 
-githubRoutes.openapi(adapterInfoRoute, (c) => {
+githubRoutes.openapi(adapterInfoRoute, c => {
   return c.json({
     name: githubAdapter.name,
     version: githubAdapter.version,
     supportedEvents: githubAdapter.supportedEvents,
     endpoints: {
-      workflow_job_queued: "/adapters/github/workflow_job/queued",
-      workflow_job_waiting: "/adapters/github/workflow_job/waiting",
-      workflow_job_in_progress: "/adapters/github/workflow_job/in_progress",
-      workflow_job_completed: "/adapters/github/workflow_job/completed",
-      workflow_job_generic: "/adapters/github/workflow_job",
-      ping: "/adapters/github/ping",
-      info: "/adapters/github/info",
-      generic_webhook: "/adapters/github/webhook", // 2024-12-19: Added generic webhook endpoint
+      workflow_job_queued: '/adapters/github/workflow_job/queued',
+      workflow_job_waiting: '/adapters/github/workflow_job/waiting',
+      workflow_job_in_progress: '/adapters/github/workflow_job/in_progress',
+      workflow_job_completed: '/adapters/github/workflow_job/completed',
+      workflow_job_generic: '/adapters/github/workflow_job',
+      ping: '/adapters/github/ping',
+      info: '/adapters/github/info',
+      generic_webhook: '/adapters/github/webhook', // 2024-12-19: Added generic webhook endpoint
     },
-    description: "GitHub webhook adapter for transforming workflow job events to CD Events",
+    description:
+      'GitHub webhook adapter for transforming workflow job events to CD Events',
   });
 });
