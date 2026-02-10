@@ -2,7 +2,7 @@
 python.uv_venv_auto = true
 
 [tools]
-node = "24.13.0"
+node = "24.13.1"
 python = "3.14.2"
 uv = "latest"
 prek = "0.3.1"
