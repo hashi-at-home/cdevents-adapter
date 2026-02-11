@@ -13,8 +13,8 @@ import { z } from 'zod';
 
 // Define environment bindings
 type Env = {
-  readonly CI_BUILD_QUEUED?: Queue;
-  readonly EVENTS_BUCKET?: R2Bucket;
+  readonly CI_BUILD_QUEUED?: any;
+  readonly EVENTS_BUCKET?: any;
 };
 
 // Success response schema for webhook transformations
@@ -34,7 +34,7 @@ const githubAdapter = new GitHubAdapter();
  * @param cdevent - Optional transformed CD event
  */
 async function logWebhookToR2(
-  bucket: R2Bucket | undefined,
+  bucket: any | undefined,
   eventType: string,
   webhookData: any,
   cdevent?: any
