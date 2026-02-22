@@ -1,7 +1,8 @@
-import { OpenAPIHono, createRoute } from "@hono/zod-openapi";
-import { swaggerUI } from "@hono/swagger-ui";
-import { githubRoutes } from "./adapters/github/routes";
-import { getVersion, getAppName } from "./version";
+import { OpenAPIHono, createRoute } from '@hono/zod-openapi';
+import { swaggerUI } from '@hono/swagger-ui';
+import { githubRoutes } from './adapters/github/routes';
+import { jiraRoutes } from './adapters/jira/routes';
+import { getVersion, getAppName } from './version';
 import {
   CDEventSchema,
   CoreCDEventSchema,
@@ -16,21 +17,21 @@ import {
   SubjectTypeEnum,
   LinkTypeEnum,
   LinkKindEnum,
-} from "./schemas";
+} from './schemas';
 
 type Environment = {
-  readonly CI_BUILD_QUEUED: Queue<Error>
-  readonly EVENTS_BUCKET?: R2Bucket
-}
+  readonly CI_BUILD_QUEUED: any;
+  readonly EVENTS_BUCKET?: any;
+};
 
 const app = new OpenAPIHono<{ Bindings: Environment }>();
 
 // OpenAPI documentation endpoint
-app.doc("/openapi.json", {
-  openapi: "3.0.0",
+app.doc('/openapi.json', {
+  openapi: '3.0.0',
   info: {
     version: getVersion(),
-    title: "CD Events Adapter API",
+    title: 'CD Events Adapter API',
     description: `
 # CD Events Adapter API
 
@@ -71,61 +72,65 @@ Use the schemas provided in this documentation to:
 Visit the [CD Events specification](https://cdevents.dev/) for more information.
     `.trim(),
     contact: {
-      name: "Bruce Becker",
-      url: "https://brucellino.dev",
+      name: 'Bruce Becker',
+      url: 'https://brucellino.dev',
     },
     license: {
-      name: "Apache 2.0",
-      url: "https://www.apache.org/licenses/LICENSE-2.0.html",
+      name: 'Apache 2.0',
+      url: 'https://www.apache.org/licenses/LICENSE-2.0.html',
     },
   },
   servers: [
     {
-      url: "http://localhost:8787",
-      description: "Development server",
+      url: 'http://localhost:8787',
+      description: 'Development server',
     },
   ],
   tags: [
     {
-      name: "Adapters",
+      name: 'Adapters',
       description:
-        "Webhook adapters for transforming external events to CD Events",
+        'Webhook adapters for transforming external events to CD Events',
     },
     {
-      name: "GitHub Adapter",
-      description: "Transform GitHub webhook events to CD Events",
+      name: 'GitHub Adapter',
+      description: 'Transform GitHub webhook events to CD Events',
     },
     {
-      name: "Validation",
-      description: "CD Events schema validation endpoints",
+      name: 'Jira Adapter',
+      description: 'Transform Jira webhook events to CD Events',
     },
     {
-      name: "Schemas",
-      description: "CD Events schema definitions and validation",
+      name: 'Validation',
+      description: 'CD Events schema validation endpoints',
     },
     {
-      name: "Events",
-      description: "CD Event type definitions",
+      name: 'Schemas',
+      description: 'CD Events schema definitions and validation',
     },
     {
-      name: "Components",
-      description: "Reusable schema components",
+      name: 'Events',
+      description: 'CD Event type definitions',
+    },
+    {
+      name: 'Components',
+      description: 'Reusable schema components',
     },
   ],
 });
 
 // Swagger UI endpoint
 app.get(
-  "/docs",
+  '/docs',
   swaggerUI({
-    url: "/openapi.json",
-  }),
+    url: '/openapi.json',
+  })
 );
 
 // Health check endpoint
-app.get("/health", (c) => {
+app.get('/health', c => {
   return c.json({
-    status: "healthy",
+    status: 'healthy',
     timestamp: new Date().toISOString(),
     service: getAppName(),
     version: getVersion(),
@@ -134,12 +139,12 @@ app.get("/health", (c) => {
 
 // Schema validation endpoints to register schemas in OpenAPI
 const validatePipelineRunQueuedRoute = createRoute({
-  method: "post",
-  path: "/validate/pipelinerun/queued",
+  method: 'post',
+  path: '/validate/pipelinerun/queued',
   request: {
     body: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: PipelineRunQueuedEventSchema,
         },
       },
@@ -148,37 +153,37 @@ const validatePipelineRunQueuedRoute = createRoute({
   responses: {
     200: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: {
-            type: "object",
+            type: 'object',
             properties: {
-              valid: { type: "boolean" },
-              eventType: { type: "string" },
+              valid: { type: 'boolean' },
+              eventType: { type: 'string' },
             },
           },
         },
       },
-      description: "Validation result",
+      description: 'Validation result',
     },
     400: {
       content: {
-        "application/json": {
-          schema: { type: "object", properties: { error: { type: "string" } } },
+        'application/json': {
+          schema: { type: 'object', properties: { error: { type: 'string' } } },
         },
       },
-      description: "Validation error",
+      description: 'Validation error',
     },
   },
-  tags: ["Validation"],
+  tags: ['Validation'],
 });
 
 const validatePipelineRunStartedRoute = createRoute({
-  method: "post",
-  path: "/validate/pipelinerun/started",
+  method: 'post',
+  path: '/validate/pipelinerun/started',
   request: {
     body: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: PipelineRunStartedEventSchema,
         },
       },
@@ -187,37 +192,37 @@ const validatePipelineRunStartedRoute = createRoute({
   responses: {
     200: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: {
-            type: "object",
+            type: 'object',
             properties: {
-              valid: { type: "boolean" },
-              eventType: { type: "string" },
+              valid: { type: 'boolean' },
+              eventType: { type: 'string' },
             },
           },
         },
       },
-      description: "Validation result",
+      description: 'Validation result',
     },
     400: {
       content: {
-        "application/json": {
-          schema: { type: "object", properties: { error: { type: "string" } } },
+        'application/json': {
+          schema: { type: 'object', properties: { error: { type: 'string' } } },
         },
       },
-      description: "Validation error",
+      description: 'Validation error',
     },
   },
-  tags: ["Validation"],
+  tags: ['Validation'],
 });
 
 const validatePipelineRunFinishedRoute = createRoute({
-  method: "post",
-  path: "/validate/pipelinerun/finished",
+  method: 'post',
+  path: '/validate/pipelinerun/finished',
   request: {
     body: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: PipelineRunFinishedEventSchema,
         },
       },
@@ -226,37 +231,37 @@ const validatePipelineRunFinishedRoute = createRoute({
   responses: {
     200: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: {
-            type: "object",
+            type: 'object',
             properties: {
-              valid: { type: "boolean" },
-              eventType: { type: "string" },
+              valid: { type: 'boolean' },
+              eventType: { type: 'string' },
             },
           },
         },
       },
-      description: "Validation result",
+      description: 'Validation result',
     },
     400: {
       content: {
-        "application/json": {
-          schema: { type: "object", properties: { error: { type: "string" } } },
+        'application/json': {
+          schema: { type: 'object', properties: { error: { type: 'string' } } },
         },
       },
-      description: "Validation error",
+      description: 'Validation error',
     },
   },
-  tags: ["Validation"],
+  tags: ['Validation'],
 });
 
 const validateTaskRunStartedRoute = createRoute({
-  method: "post",
-  path: "/validate/taskrun/started",
+  method: 'post',
+  path: '/validate/taskrun/started',
   request: {
     body: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: TaskRunStartedEventSchema,
         },
       },
@@ -265,37 +270,37 @@ const validateTaskRunStartedRoute = createRoute({
   responses: {
     200: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: {
-            type: "object",
+            type: 'object',
             properties: {
-              valid: { type: "boolean" },
-              eventType: { type: "string" },
+              valid: { type: 'boolean' },
+              eventType: { type: 'string' },
             },
           },
         },
       },
-      description: "Validation result",
+      description: 'Validation result',
     },
     400: {
       content: {
-        "application/json": {
-          schema: { type: "object", properties: { error: { type: "string" } } },
+        'application/json': {
+          schema: { type: 'object', properties: { error: { type: 'string' } } },
         },
       },
-      description: "Validation error",
+      description: 'Validation error',
     },
   },
-  tags: ["Validation"],
+  tags: ['Validation'],
 });
 
 const validateTaskRunFinishedRoute = createRoute({
-  method: "post",
-  path: "/validate/taskrun/finished",
+  method: 'post',
+  path: '/validate/taskrun/finished',
   request: {
     body: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: TaskRunFinishedEventSchema,
         },
       },
@@ -304,37 +309,37 @@ const validateTaskRunFinishedRoute = createRoute({
   responses: {
     200: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: {
-            type: "object",
+            type: 'object',
             properties: {
-              valid: { type: "boolean" },
-              eventType: { type: "string" },
+              valid: { type: 'boolean' },
+              eventType: { type: 'string' },
             },
           },
         },
       },
-      description: "Validation result",
+      description: 'Validation result',
     },
     400: {
       content: {
-        "application/json": {
-          schema: { type: "object", properties: { error: { type: "string" } } },
+        'application/json': {
+          schema: { type: 'object', properties: { error: { type: 'string' } } },
         },
       },
-      description: "Validation error",
+      description: 'Validation error',
     },
   },
-  tags: ["Validation"],
+  tags: ['Validation'],
 });
 
 const validateCoreEventRoute = createRoute({
-  method: "post",
-  path: "/validate/event",
+  method: 'post',
+  path: '/validate/event',
   request: {
     body: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: CoreCDEventSchema,
         },
       },
@@ -343,114 +348,134 @@ const validateCoreEventRoute = createRoute({
   responses: {
     200: {
       content: {
-        "application/json": {
+        'application/json': {
           schema: {
-            type: "object",
+            type: 'object',
             properties: {
-              valid: { type: "boolean" },
-              eventType: { type: "string" },
+              valid: { type: 'boolean' },
+              eventType: { type: 'string' },
             },
           },
         },
       },
-      description: "Validation result",
+      description: 'Validation result',
     },
     400: {
       content: {
-        "application/json": {
-          schema: { type: "object", properties: { error: { type: "string" } } },
+        'application/json': {
+          schema: { type: 'object', properties: { error: { type: 'string' } } },
         },
       },
-      description: "Validation error",
+      description: 'Validation error',
     },
   },
-  tags: ["Validation"],
+  tags: ['Validation'],
 });
 
 // Register validation endpoints
-app.openapi(validatePipelineRunQueuedRoute, (c) => {
-  const body = c.req.valid("json");
+app.openapi(validatePipelineRunQueuedRoute, c => {
+  const body = c.req.valid('json');
   return c.json({ valid: true, eventType: body.context.type }, 200) as any;
 });
 
-app.openapi(validatePipelineRunStartedRoute, (c) => {
-  const body = c.req.valid("json");
+app.openapi(validatePipelineRunStartedRoute, c => {
+  const body = c.req.valid('json');
   return c.json({ valid: true, eventType: body.context.type }, 200) as any;
 });
 
-app.openapi(validatePipelineRunFinishedRoute, (c) => {
-  const body = c.req.valid("json");
+app.openapi(validatePipelineRunFinishedRoute, c => {
+  const body = c.req.valid('json');
   return c.json({ valid: true, eventType: body.context.type }, 200) as any;
 });
 
-app.openapi(validateTaskRunStartedRoute, (c) => {
-  const body = c.req.valid("json");
+app.openapi(validateTaskRunStartedRoute, c => {
+  const body = c.req.valid('json');
   return c.json({ valid: true, eventType: body.context.type }, 200) as any;
 });
 
-app.openapi(validateTaskRunFinishedRoute, (c) => {
-  const body = c.req.valid("json");
+app.openapi(validateTaskRunFinishedRoute, c => {
+  const body = c.req.valid('json');
   return c.json({ valid: true, eventType: body.context.type }, 200) as any;
 });
 
-app.openapi(validateCoreEventRoute, (c) => {
-  const body = c.req.valid("json");
+app.openapi(validateCoreEventRoute, c => {
+  const body = c.req.valid('json');
   return c.json({ valid: true, eventType: body.context.type }, 200) as any;
 });
 
 // Mount GitHub adapter routes
-app.route("/adapters/github", githubRoutes);
+app.route('/adapters/github', githubRoutes);
+
+// Mount Jira adapter routes
+app.route('/adapters/jira', jiraRoutes);
 
 // Root endpoint with API information
-app.get("/", (c) => {
+app.get('/', c => {
   return c.json({
-    name: "CD Events Adapter API",
+    name: 'CD Events Adapter API',
     version: getVersion(),
-    description: "API for CD Events schema validation and documentation",
+    description: 'API for CD Events schema validation and documentation',
     documentation: {
-      openapi: "/openapi.json",
-      swagger: "/docs",
+      openapi: '/openapi.json',
+      swagger: '/docs',
     },
     endpoints: {
-      health: "/health",
-      documentation: "/docs",
-      openapi_spec: "/openapi.json",
+      health: '/health',
+      documentation: '/docs',
+      openapi_spec: '/openapi.json',
       adapters: {
-        github: "/adapters/github/info",
+        github: '/adapters/github/info',
+        jira: '/adapters/jira/info',
       },
       validation: {
         pipelineRun: {
-          queued: "/validate/pipelinerun/queued",
-          started: "/validate/pipelinerun/started",
-          finished: "/validate/pipelinerun/finished",
+          queued: '/validate/pipelinerun/queued',
+          started: '/validate/pipelinerun/started',
+          finished: '/validate/pipelinerun/finished',
         },
         taskRun: {
-          started: "/validate/taskrun/started",
-          finished: "/validate/taskrun/finished",
+          started: '/validate/taskrun/started',
+          finished: '/validate/taskrun/finished',
         },
-        generic: "/validate/event",
+        generic: '/validate/event',
       },
     },
     supported_events: {
-      pipelineRun: ["queued", "started", "finished"],
-      taskRun: ["started", "finished"],
+      pipelineRun: ['queued', 'started', 'finished'],
+      taskRun: ['started', 'finished'],
     },
     supported_adapters: {
       github: {
-        name: "GitHub Webhooks",
+        name: 'GitHub Webhooks',
         version: getVersion(),
         supported_events: [
-          "workflow_job.queued",
-          "workflow_job.waiting",
-          "workflow_job.in_progress",
-          "workflow_job.completed",
+          'workflow_job.queued',
+          'workflow_job.waiting',
+          'workflow_job.in_progress',
+          'workflow_job.completed',
         ],
-        base_path: "/adapters/github",
+        base_path: '/adapters/github',
+      },
+      jira: {
+        name: 'Jira Webhooks',
+        version: getVersion(),
+        supported_events: [
+          'jira:issue_created',
+          'jira:issue_updated',
+          'jira:issue_deleted',
+          'comment_created',
+          'comment_updated',
+          'comment_deleted',
+          'worklog_created',
+          'worklog_updated',
+          'worklog_deleted',
+        ],
+        base_path: '/adapters/jira',
       },
     },
     specification: {
-      version: "0.4.1",
-      url: "https://cdevents.dev",
+      version: '0.4.1',
+      url: 'https://cdevents.dev',
     },
   });
 });

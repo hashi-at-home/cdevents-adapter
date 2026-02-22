@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       # Install mise for tool management
       # https://mise.jdx.dev/
@@ -41,7 +41,7 @@ jobs:
       # Cache npm dependencies for faster builds
       # https://docs.github.com/en/actions/using-workflows/caching-dependencies-to-speed-up-workflows
       - name: Cache dependencies
-        uses: actions/cache@v5.0.1
+        uses: actions/cache@v5.0.3
         with:
           path: ~/.npm
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
@@ -75,7 +75,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       # Run Trivy security scanner
       # https://github.com/aquasecurity/trivy-action
@@ -106,7 +106,7 @@ jobs:
           scan-ref: "."
 
       - name: Upload SBOM as artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: sbom
           path: sbom.json
@@ -122,7 +122,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           # Fetch full history for semantic-release to analyze commits
           fetch-depth: 0
@@ -144,7 +144,7 @@ jobs:
 
       # Cache npm dependencies
       - name: Cache dependencies
-        uses: actions/cache@v5.0.1
+        uses: actions/cache@v5.0.3
         with:
           path: ~/.npm
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
