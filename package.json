@@ -18,7 +18,7 @@
     "test:essential": "vitest run src/__tests__/adapters/github/essential-*.test.ts"
   },
   "dependencies": {
-    "@hono/swagger-ui": "^0.5.2",
+    "@hono/swagger-ui": "^0.6.0",
     "@hono/zod-openapi": "^1.1.0",
     "hono": "^4.9.4",
     "zod": "^4.0.17"
