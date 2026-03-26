@@ -7,35 +7,76 @@
   "routes": [
     {
       "custom_domain": true,
-      "pattern": "cdevents.hashiatho.me"
-    }
+      "pattern": "cdevents.hashiatho.me",
+    },
   ],
   "observability": {
     "enabled": true,
-    "head_sampling_rate": 1
+    "head_sampling_rate": 1,
   },
   "r2_buckets": [
     {
       "binding": "EVENTS_BUCKET",
-      "bucket_name": "hashiathome-cd-events"
-    }
+      "bucket_name": "hashiathome-cd-events",
+    },
   ],
   "queues": {
     "consumers": [],
-    // A queue for every event type
+    // A queue for every event type supported.
+    // Since we have two adapters, we need relevant queues for them
+    // Jira adapts to Ticket events
+    // Github adapts to CI and SCM events.
     "producers": [
       {
-        "binding": "CI_BUILD_QUEUED",
+        "binding": "SCM_BRANCH_CREATED_Q",
+        "queue": "hashiathome-scm-branch-created",
+      },
+      {
+        "binding": "SCM_BRANCH_DELETED_Q",
+        "queue": "hashiathome-scm-branch-deleted",
+      },
+      {
+        "binding": "SCM_CHANGE_CREATED_Q",
+        "queue": "hashiathome-scm-change-created",
+      },
+      {
+        "binding": "SCM_CHANGE_REVIEWED_Q",
+        "queue": "hashiathome-scm-change-reviewed",
+      },
+      {
+        "binding": "SCM_CHANGE_MERGED_Q",
+        "queue": "hashiatho-scm-change-merged",
+      },
+      {
+        "binding": "SCM_CHANGE_ABANDONED_Q",
+        "queue": "hashiathome-scm-change-abandoned",
+      },
+      // We do not yet support scm.repository events
+      {
+        "binding": "CI_BUILD_QUEUED_Q",
         "queue": "hashiathome-ci-build-queued",
       },
       {
-        "binding": "CI_BUILD_STARTED",
+        "binding": "CI_BUILD_STARTED_Q",
         "queue": "hashiathome-ci-build-started",
       },
       {
-        "binding": "CI_BUILD_FINISHED",
+        "binding": "CI_BUILD_FINISHED_Q",
         "queue": "hashiathome-ci-build-finished",
-      }
-    ]
-  }
+      },
+      // artifact events are not supported yet
+      {
+        "binding": "TICKET_CREATED_Q",
+        "queue": "hashiathome-ticket-created",
+      },
+      {
+        "binding": "TICKET_UPDATED_Q",
+        "queue": "hashiathome-ticket-updated",
+      },
+      {
+        "binding": "TICKET_CLOSED_Q",
+        "queue": "hashiathome-ticket-closed",
+      },
+    ],
+  },
 }
