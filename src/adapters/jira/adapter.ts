@@ -41,6 +41,7 @@ import {
 export class JiraAdapter extends BaseAdapter {
   readonly name = 'jira';
   readonly version = getVersion();
+  // supportedEvents
   readonly supportedEvents = [
     'jira:issue_created',
     'jira:issue_updated',
