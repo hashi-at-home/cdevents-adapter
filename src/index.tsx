@@ -478,7 +478,7 @@ app.get('/', c => {
       },
     },
     specification: {
-      version: '0.4.1',
+      specVersion: '0.4.1',
       url: 'https://cdevents.dev',
     },
   });

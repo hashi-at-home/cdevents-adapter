@@ -34,7 +34,7 @@ describe('CD Events Adapter API', () => {
           taskRun: ['started', 'finished'],
         },
         specification: {
-          version: '0.4.1',
+          specVersion: '0.4.1',
           url: 'https://cdevents.dev',
         },
       });
