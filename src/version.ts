@@ -22,7 +22,7 @@ export const getVersion = (): string => {
 
   // Fallback for development or when version is not injected
   // This allows the app to work even if the build process doesn't inject the version
-  return process.env.APP_VERSION || '0.0.0-dev';
+  return '0.0.0-dev';
 };
 
 /**
