@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { Hono } from "hono";
-import { OpenAPIHono } from "@hono/zod-openapi";
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { Hono } from 'hono';
+import { OpenAPIHono } from '@hono/zod-openapi';
 // import type { Env } from "../../types";
 
 type Env = {
@@ -8,7 +8,7 @@ type Env = {
   readonly EVENTS_BUCKET?: R2Bucket;
 };
 
-describe("Validation Error Handling Fix", () => {
+describe('Validation Error Handling Fix', () => {
   let app: OpenAPIHono<{ Bindings: Env }>;
   let mockEnv: Partial<Env>;
 
@@ -25,33 +25,33 @@ describe("Validation Error Handling Fix", () => {
     };
 
     // Add a test endpoint that uses the validation logic
-    app.post("/test-validation", async (c) => {
+    app.post('/test-validation', async c => {
       const cdevent = {
         context: {
-          version: "0.4.1",
-          id: "test-event-id",
-          source: "https://github.com/test/repo",
-          type: "dev.cdevents.pipelinerun.queued.0.2.0",
+          specVersion: '0.4.1',
+          id: 'test-event-id',
+          source: 'https://github.com/test/repo',
+          type: 'dev.cdevents.pipelinerun.queued.0.2.0',
           timestamp: new Date().toISOString(),
         },
         subject: {
-          id: "test-subject-id",
-          type: "pipelineRun",
+          id: 'test-subject-id',
+          type: 'pipelineRun',
           content: {
-            pipelineName: "Test Pipeline",
-            url: "https://github.com/test/repo/actions/runs/123",
+            pipelineName: 'Test Pipeline',
+            url: 'https://github.com/test/repo/actions/runs/123',
           },
         },
       };
 
       // Simulate the validation logic with proper error handling
       let validationResult = null;
-      const validationUrl = `${c.req.url.split("/test-validation")[0]}/validate/event`;
+      const validationUrl = `${c.req.url.split('/test-validation')[0]}/validate/event`;
 
       try {
         const validationResponse = await fetch(validationUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(cdevent),
         });
 
@@ -60,43 +60,54 @@ describe("Validation Error Handling Fix", () => {
           validationResult = await validationResponse.json();
         } else {
           // Handle non-OK responses without trying to parse as JSON
-          console.warn(`Validation failed with status ${validationResponse.status}: ${validationResponse.statusText}`);
+          console.warn(
+            `Validation failed with status ${validationResponse.status}: ${validationResponse.statusText}`
+          );
         }
       } catch (error) {
-        console.warn("Validation request failed:", error);
+        console.warn('Validation request failed:', error);
       }
 
       return c.json({
         success: true,
-        message: "Test completed",
+        message: 'Test completed',
         validationResult,
       });
     });
   });
 
-  it("should handle Cloudflare 522 error (Connection Timed Out) gracefully", async () => {
+  it('should handle Cloudflare 522 error (Connection Timed Out) gracefully', async () => {
     // Mock fetch to simulate a 522 error response
     const originalFetch = global.fetch;
     global.fetch = vi.fn().mockImplementation((url: string) => {
-      if (url.includes("/validate/event")) {
+      if (url.includes('/validate/event')) {
         // Simulate Cloudflare 522 error response
         return Promise.resolve({
           ok: false,
           status: 522,
-          statusText: "Connection Timed Out",
-          text: () => Promise.resolve("error code: 522"),
-          json: () => Promise.reject(new SyntaxError('Unexpected token \'e\', "error code: 522" is not valid JSON')),
+          statusText: 'Connection Timed Out',
+          text: () => Promise.resolve('error code: 522'),
+          json: () =>
+            Promise.reject(
+              new SyntaxError(
+                'Unexpected token \'e\', "error code: 522" is not valid JSON'
+              )
+            ),
         });
       }
       return originalFetch(url);
     });
 
-    const response = await app.request("/test-validation", {
-      method: "POST",
-    }, mockEnv as Env);
+    const response = await app.request(
+      '/test-validation',
+      {
+        method: 'POST',
+      },
+      mockEnv as Env
+    );
 
     expect(response.status).toBe(200);
-    const body = await response.json() as any;
+    const body = (await response.json()) as any;
     expect(body.success).toBe(true);
     expect(body.validationResult).toBeNull(); // Validation failed but request succeeded
 
@@ -104,56 +115,65 @@ describe("Validation Error Handling Fix", () => {
     global.fetch = originalFetch;
   });
 
-  it("should handle successful validation response", async () => {
+  it('should handle successful validation response', async () => {
     // Mock fetch to simulate a successful validation response
     const originalFetch = global.fetch;
     global.fetch = vi.fn().mockImplementation((url: string) => {
-      if (url.includes("/validate/event")) {
+      if (url.includes('/validate/event')) {
         return Promise.resolve({
           ok: true,
           status: 200,
-          statusText: "OK",
-          json: () => Promise.resolve({
-            valid: true,
-            message: "CDEvent is valid",
-          }),
+          statusText: 'OK',
+          json: () =>
+            Promise.resolve({
+              valid: true,
+              message: 'CDEvent is valid',
+            }),
         });
       }
       return originalFetch(url);
     });
 
-    const response = await app.request("/test-validation", {
-      method: "POST",
-    }, mockEnv as Env);
+    const response = await app.request(
+      '/test-validation',
+      {
+        method: 'POST',
+      },
+      mockEnv as Env
+    );
 
     expect(response.status).toBe(200);
-    const body = await response.json() as any;
+    const body = (await response.json()) as any;
     expect(body.success).toBe(true);
     expect(body.validationResult).toEqual({
       valid: true,
-      message: "CDEvent is valid",
+      message: 'CDEvent is valid',
     });
 
     // Restore original fetch
     global.fetch = originalFetch;
   });
 
-  it("should handle network errors gracefully", async () => {
+  it('should handle network errors gracefully', async () => {
     // Mock fetch to simulate a network error
     const originalFetch = global.fetch;
     global.fetch = vi.fn().mockImplementation((url: string) => {
-      if (url.includes("/validate/event")) {
-        return Promise.reject(new Error("Network error: Connection refused"));
+      if (url.includes('/validate/event')) {
+        return Promise.reject(new Error('Network error: Connection refused'));
       }
       return originalFetch(url);
     });
 
-    const response = await app.request("/test-validation", {
-      method: "POST",
-    }, mockEnv as Env);
+    const response = await app.request(
+      '/test-validation',
+      {
+        method: 'POST',
+      },
+      mockEnv as Env
+    );
 
     expect(response.status).toBe(200);
-    const body = await response.json() as any;
+    const body = (await response.json()) as any;
     expect(body.success).toBe(true);
     expect(body.validationResult).toBeNull(); // Network error handled gracefully
 
@@ -161,11 +181,11 @@ describe("Validation Error Handling Fix", () => {
     global.fetch = originalFetch;
   });
 
-  it("should handle HTML error responses without parsing as JSON", async () => {
+  it('should handle HTML error responses without parsing as JSON', async () => {
     // Mock fetch to simulate an HTML error response (common with proxy errors)
     const originalFetch = global.fetch;
     global.fetch = vi.fn().mockImplementation((url: string) => {
-      if (url.includes("/validate/event")) {
+      if (url.includes('/validate/event')) {
         const htmlError = `
           <!DOCTYPE html>
           <html>
@@ -179,7 +199,7 @@ describe("Validation Error Handling Fix", () => {
         return Promise.resolve({
           ok: false,
           status: 502,
-          statusText: "Bad Gateway",
+          statusText: 'Bad Gateway',
           text: () => Promise.resolve(htmlError),
           json: () => Promise.reject(new SyntaxError("Unexpected token '<'")),
         });
@@ -187,12 +207,16 @@ describe("Validation Error Handling Fix", () => {
       return originalFetch(url);
     });
 
-    const response = await app.request("/test-validation", {
-      method: "POST",
-    }, mockEnv as Env);
+    const response = await app.request(
+      '/test-validation',
+      {
+        method: 'POST',
+      },
+      mockEnv as Env
+    );
 
     expect(response.status).toBe(200);
-    const body = await response.json() as any;
+    const body = (await response.json()) as any;
     expect(body.success).toBe(true);
     expect(body.validationResult).toBeNull(); // HTML error handled without crashing
 
