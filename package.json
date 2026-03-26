@@ -1,6 +1,6 @@
 {
   "name": "@hashi-at-home/cdevents-adapter",
-  "version": "2.1.0-7284ec",
+  "version": "3.0.0",
   "engines": {
     "npm": ">=11.0.0 <12.0.0",
     "node": ">=24.0.0 <25.0.0"
