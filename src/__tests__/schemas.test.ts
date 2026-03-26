@@ -163,12 +163,17 @@ describe('CD Events Core Schemas', () => {
     });
 
     it('should reject context missing required fields', () => {
-      const requiredFields = ['version', 'id', 'source', 'type', 'timestamp'];
+      const requiredFields = [
+        'specVersion',
+        'id',
+        'source',
+        'type',
+        'timestamp',
+      ];
 
       requiredFields.forEach(field => {
         const incompleteContext = { ...validContext };
         delete (incompleteContext as any)[field];
-
         expect(() => CDEventContextSchema.parse(incompleteContext)).toThrow();
       });
     });

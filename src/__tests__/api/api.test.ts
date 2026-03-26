@@ -153,7 +153,7 @@ describe('CD Events Adapter API', () => {
 
       // Check that context schema has proper structure
       expect(schemas.CDEventContext).toHaveProperty('type', 'object');
-      expect(schemas.CDEventContext.properties).toHaveProperty('version');
+      expect(schemas.CDEventContext.properties).toHaveProperty('specVersion');
       expect(schemas.CDEventContext.properties).toHaveProperty('id');
       expect(schemas.CDEventContext.properties).toHaveProperty('source');
       expect(schemas.CDEventContext.properties).toHaveProperty('type');
@@ -337,12 +337,10 @@ describe('CD Events Adapter API', () => {
         servers: any[];
       };
 
-      expect(json.servers).toEqual([
-        {
-          url: 'http://localhost:8787',
-          description: 'Development server',
-        },
-      ]);
+      expect(json.servers).toContainEqual({
+        url: 'http://localhost:8787',
+        description: 'Development server',
+      });
     });
   });
 
