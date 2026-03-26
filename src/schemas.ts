@@ -239,6 +239,64 @@ export const TaskRunFinishedContentSchema = z
   })
   .openapi('TaskRunFinishedContent');
 
+// ticket events
+export const TicketContentSchema = z.object({
+  id: z.string().openapi({
+    description: 'subject identifier',
+    example: '04896C75-F34D-40FF-A584-3F2B71CB9D47',
+  }),
+  source: z.string().optional().openapi({
+    description: 'Source of the ticket',
+    example: 'https://your.jira.source/project/project_name',
+  }),
+  summary: z.string().openapi({
+    description: 'Summary provided on the ticket',
+    example: 'Implement feature xyz',
+  }),
+  ticketType: z
+    .enum(['Bug', 'Epic', 'Story', 'Task', 'Sub-Task'])
+    .optional()
+    .openapi({
+      description: 'The type of ticket in the event',
+      example: 'Bug',
+    }),
+  group: z.string().optional().openapi({
+    description: 'Group or project the ticket is assigned to',
+    example: 'DevOps',
+  }),
+  creator: z.string().openapi({
+    description: 'The ticket author',
+    example: 'Boss',
+  }),
+  assignees: z.array(z.string()).optional().openapi({
+    description: 'The ticket assignee',
+    example: 'Dev',
+  }),
+  priority: z.string().optional().openapi({
+    description: 'The ticket priority',
+    example: 'High',
+  }),
+  labels: z
+    .array(z.string())
+    .optional()
+    .openapi({
+      description: 'The ticket labels',
+      example: ['bug', 'urgent'],
+    }),
+  milestone: z.string().optional().openapi({
+    description: 'The ticket milestone',
+    example: 'Release 1.0',
+  }),
+  uri: z.url().openapi({
+    description: 'The ticket URI',
+    example: 'https://example.com/tickets/123',
+  }),
+  updatedBy: z.string().optional().openapi({
+    description: 'The ticket updater',
+    example: 'Bob',
+  }),
+});
+
 // Generic subject schema
 export const CDEventSubjectSchema = z
   .object({
@@ -295,6 +353,30 @@ export const TaskRunFinishedSubjectSchema = CDEventSubjectSchema.extend({
   type: z.literal('taskRun').optional(),
   content: TaskRunFinishedContentSchema,
 }).openapi('TaskRunFinishedSubject');
+
+// dev.cdevents.ops events
+// ticket events - incidents not supported yet
+export const TicketCreatedSubjectSchema = CDEventSubjectSchema.extend({
+  type: z.literal('ticketCreated').optional(),
+  content: TicketContentSchema,
+});
+
+export const TicketUpdatedSubjectSchema = CDEventSubjectSchema.extend({
+  type: z.literal('ticketUpdated').optional(),
+  content: TicketContentSchema,
+});
+
+export const TicketClosedSubjectSchema = CDEventSubjectSchema.extend({
+  type: z.literal('ticketClosed').optional(),
+  resolution: z
+    .enum(['Done', 'Abandoned', 'Rejected', 'Closed', 'Fixed'])
+    .optional()
+    .openapi({
+      description: 'The ticket resolution',
+      example: 'Fixed',
+    }),
+  content: TicketContentSchema,
+});
 
 // Base CDEvent schema
 export const CDEventSchema = z
@@ -539,3 +621,5 @@ export const createTaskRunFinishedEvent = (
     },
   },
 });
+
+// ticket created Event
