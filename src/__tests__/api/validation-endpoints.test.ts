@@ -6,7 +6,7 @@ import {
   createPipelineRunFinishedEvent,
   createTaskRunStartedEvent,
   createTaskRunFinishedEvent,
-} from '../../schemas';
+} from '../../schema-core-events';
 
 describe('Validation Endpoints', () => {
   const validTimestamp = '2023-10-01T12:00:00.000Z';

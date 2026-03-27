@@ -12,7 +12,7 @@ import {
   TaskRunStartedEventSchema,
   TaskRunFinishedEventSchema,
   CoreCDEventSchema,
-} from '../schemas';
+} from '../schema-core-events';
 
 const app = new Hono();
 

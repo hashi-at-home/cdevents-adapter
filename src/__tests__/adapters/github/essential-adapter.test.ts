@@ -4,7 +4,7 @@ import {
   PipelineRunQueuedEventSchema,
   PipelineRunStartedEventSchema,
   PipelineRunFinishedEventSchema,
-} from '../../../schemas';
+} from '../../../schema-core-events';
 
 describe('GitHub Adapter Essential Tests', () => {
   const adapter = new GitHubAdapter();

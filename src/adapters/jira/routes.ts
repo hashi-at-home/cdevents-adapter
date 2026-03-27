@@ -1,6 +1,7 @@
 import { OpenAPIHono, createRoute } from '@hono/zod-openapi';
 import { z } from '@hono/zod-openapi';
 import { Context } from 'hono';
+import { Queue } from '@cloudflare/workers-types';
 import { getVersion } from '../../version';
 import { JiraAdapter } from './adapter';
 import {
@@ -17,18 +18,17 @@ import {
   JiraGenericWebhookSchema,
   extractJiraWebhookEventType,
   safeValidateJiraWebhookEvent,
+  JiraWebhookEvent,
 } from './schemas';
-import {
-  PipelineRunQueuedEventSchema,
-  PipelineRunStartedEventSchema,
-  PipelineRunFinishedEventSchema,
-  TaskRunStartedEventSchema,
-  TaskRunFinishedEventSchema,
-} from '../../schemas';
 
 type Env = {
-  readonly CI_BUILD_QUEUED: any;
-  readonly EVENTS_BUCKET?: any;
+  // We bind to queues and the events bucket
+  // Only ticket queues are bound here.
+  readonly TICKET_CREATED_Q: Queue;
+  readonly TICKET_UPDATED_Q: Queue;
+  readonly TICKET_CLOSED_Q: Queue;
+  readonly EVENTS_BUCKET: R2Bucket;
+  readonly TICKET_TRANSITIONS_KV: KVNamespace;
 };
 
 const AdapterSuccessResponseSchema = z.object({
@@ -39,12 +39,59 @@ const AdapterSuccessResponseSchema = z.object({
 
 const jiraAdapter = new JiraAdapter();
 
+/* Cache a ticket transition from one state to th next */
+async function cacheTicketTransition(
+  kv: KVNamespace,
+  webhookData: JiraWebhookEvent
+): Promise<void> {
+  // If KV is not configured, with error
+  if (!kv) {
+    console.warn('KV Namespace not configured, skipping caching transition');
+    return;
+  }
+  try {
+    // if there is already a KV with that key, get it
+    const issueKey = webhookData.issue.key;
+    if (!issueKey) {
+      console.warn(
+        'cannot persist state transition for ticket with missing key'
+      );
+      return;
+    }
+    const ticketTx: any = await kv.get(issueKey);
+    let fromStatus: string | null;
+    if (!ticketTx) {
+      // new ticket
+      fromStatus = null;
+    } else {
+      fromStatus = JSON.parse(ticketTx.fromStatus);
+    }
+
+    const toStatus = webhookData.issue.fields.status.name;
+    if (fromStatus === toStatus) {
+      // no status change, we're good
+      console.log('No status change in this event, not updating cache');
+      return;
+    }
+
+    // now write the new transition
+    console.log(
+      `Status transition detected from ${fromStatus} to ${toStatus} - updating cache`
+    );
+    const tx = { fromStatus: fromStatus, toStatus: toStatus };
+    await kv.put(issueKey, JSON.stringify(tx));
+    return;
+  } catch (error) {
+    console.error('Failed to persist ticket transition to KV', error);
+  }
+}
+
 /**
  * Log webhook data to R2 bucket for debugging and audit trails
  * Added: 2025-01-27 - Webhook logging functionality for Jira events
  */
 async function logWebhookToR2(
-  bucket: any | undefined,
+  bucket: R2Bucket,
   webhookData: any,
   transformedEvent: any | null,
   context: {
@@ -643,7 +690,7 @@ jiraRoutes.openapi(issueCreatedRoute, async c => {
     // Validate the generated CD Event
     const validationResult = await validateCDEvent(cdevent);
 
-    // Log to R2 if available
+    // Log to R2
     await logWebhookToR2(c.env.EVENTS_BUCKET, webhookData, cdevent, {
       eventType,
       issueKey: webhookData.issue?.key,
@@ -651,7 +698,13 @@ jiraRoutes.openapi(issueCreatedRoute, async c => {
       user: webhookData.user?.displayName,
     });
 
+    // if validation was successful, publish it on the queue, else report error
     if (validationResult.success) {
+      // put it on the queue
+      const qResult = await c.env.TICKET_CREATED_Q.send(cdevent);
+      console.log(`Published event ${cdevent} on queue`);
+      console.log(JSON.stringify(qResult));
+
       return c.json(
         {
           success: true,

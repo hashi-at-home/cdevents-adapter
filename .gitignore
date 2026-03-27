@@ -1,3 +1,5 @@
+# worker configs
+worker-configuration.d.ts
 # prod
 dist/
 dist-server/

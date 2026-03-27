@@ -1,6 +1,6 @@
-import { z } from "@hono/zod-openapi";
-import { BaseAdapter, WebhookEventMetadata, AdapterUtils } from "../base";
-import { getVersion } from "../../version";
+import { z } from '@hono/zod-openapi';
+import { BaseAdapter, WebhookEventMetadata, AdapterUtils } from '../base';
+import { getVersion } from '../../version';
 import {
   GitHubWorkflowJobWebhookSchema,
   GitHubWorkflowJobQueuedWebhookSchema,
@@ -13,25 +13,24 @@ import {
   GitHubWorkflowJobInProgressWebhook,
   GitHubWorkflowJobCompletedWebhook,
   GitHubPingWebhook,
-} from "./schemas";
+} from './schemas';
+import { Outcome } from '../../schemas';
 import {
   createPipelineRunQueuedEvent,
   createPipelineRunStartedEvent,
   createPipelineRunFinishedEvent,
   createTaskRunStartedEvent,
   createTaskRunFinishedEvent,
-  Outcome,
-} from "../../schemas";
-
+} from '../../schema-core-events';
 export class GitHubAdapter extends BaseAdapter {
-  readonly name = "github";
+  readonly name = 'github';
   readonly version = getVersion();
   readonly supportedEvents = [
-    "workflow_job.queued",
-    "workflow_job.waiting",
-    "workflow_job.in_progress",
-    "workflow_job.completed",
-    "ping",
+    'workflow_job.queued',
+    'workflow_job.waiting',
+    'workflow_job.in_progress',
+    'workflow_job.completed',
+    'ping',
   ];
 
   async transform(webhookData: any, eventType: string): Promise<any> {
@@ -44,53 +43,53 @@ export class GitHubAdapter extends BaseAdapter {
       // Parse the webhook data based on event type
       let parsedWebhook;
       switch (eventType) {
-        case "workflow_job.queued":
+        case 'workflow_job.queued':
           parsedWebhook =
             GitHubWorkflowJobQueuedWebhookSchema.parse(webhookData);
           return this.transformWorkflowJobQueued(parsedWebhook);
 
-        case "workflow_job.waiting":
+        case 'workflow_job.waiting':
           parsedWebhook =
             GitHubWorkflowJobWaitingWebhookSchema.parse(webhookData);
           return this.transformWorkflowJobWaiting(parsedWebhook);
 
-        case "workflow_job.in_progress":
+        case 'workflow_job.in_progress':
           parsedWebhook =
             GitHubWorkflowJobInProgressWebhookSchema.parse(webhookData);
           return this.transformWorkflowJobInProgress(parsedWebhook);
 
-        case "workflow_job.completed":
+        case 'workflow_job.completed':
           parsedWebhook =
             GitHubWorkflowJobCompletedWebhookSchema.parse(webhookData);
           return this.transformWorkflowJobCompleted(parsedWebhook);
 
-        case "ping":
+        case 'ping':
           parsedWebhook = GitHubPingWebhookSchema.parse(webhookData);
           return this.transformPing(parsedWebhook);
 
         default:
           throw new Error(
-            `Transformation not implemented for event type: ${eventType}`,
+            `Transformation not implemented for event type: ${eventType}`
           );
       }
     } catch (error) {
       throw new Error(
-        `Failed to transform webhook: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to transform webhook: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
 
   getWebhookSchema(eventType: string): z.ZodSchema | null {
     switch (eventType) {
-      case "workflow_job.queued":
+      case 'workflow_job.queued':
         return GitHubWorkflowJobQueuedWebhookSchema;
-      case "workflow_job.waiting":
+      case 'workflow_job.waiting':
         return GitHubWorkflowJobWaitingWebhookSchema;
-      case "workflow_job.in_progress":
+      case 'workflow_job.in_progress':
         return GitHubWorkflowJobInProgressWebhookSchema;
-      case "workflow_job.completed":
+      case 'workflow_job.completed':
         return GitHubWorkflowJobCompletedWebhookSchema;
-      case "ping":
+      case 'ping':
         return GitHubPingWebhookSchema;
       default:
         return GitHubWorkflowJobWebhookSchema;
@@ -108,7 +107,7 @@ export class GitHubAdapter extends BaseAdapter {
   }
 
   private transformWorkflowJobQueued(
-    webhook: GitHubWorkflowJobQueuedWebhook,
+    webhook: GitHubWorkflowJobQueuedWebhook
   ): any {
     const metadata = this.extractGitHubMetadata(webhook);
 
@@ -120,7 +119,7 @@ export class GitHubAdapter extends BaseAdapter {
       metadata.timestamp,
       this.createSubjectId(webhook.workflow_job),
       webhook.workflow_job.workflow_name,
-      webhook.workflow_job.html_url,
+      webhook.workflow_job.html_url
     );
 
     // Add custom data with GitHub-specific information
@@ -140,7 +139,7 @@ export class GitHubAdapter extends BaseAdapter {
           id: webhook.repository.id,
           name: webhook.repository.name,
           full_name: webhook.repository.full_name,
-          owner: webhook.repository.owner?.login || "unknown",
+          owner: webhook.repository.owner?.login || 'unknown',
         },
         sender: {
           login: webhook.sender.login,
@@ -153,7 +152,7 @@ export class GitHubAdapter extends BaseAdapter {
   }
 
   private transformWorkflowJobWaiting(
-    webhook: GitHubWorkflowJobWaitingWebhook,
+    webhook: GitHubWorkflowJobWaitingWebhook
   ): any {
     const metadata = this.extractGitHubMetadata(webhook);
 
@@ -165,7 +164,7 @@ export class GitHubAdapter extends BaseAdapter {
       metadata.timestamp,
       this.createSubjectId(webhook.workflow_job),
       webhook.workflow_job.workflow_name,
-      webhook.workflow_job.html_url,
+      webhook.workflow_job.html_url
     );
 
     // Add custom data with GitHub-specific information
@@ -185,7 +184,7 @@ export class GitHubAdapter extends BaseAdapter {
           id: webhook.repository.id,
           name: webhook.repository.name,
           full_name: webhook.repository.full_name,
-          owner: webhook.repository.owner?.login || "unknown",
+          owner: webhook.repository.owner?.login || 'unknown',
         },
         sender: {
           login: webhook.sender.login,
@@ -198,7 +197,7 @@ export class GitHubAdapter extends BaseAdapter {
   }
 
   private transformWorkflowJobInProgress(
-    webhook: GitHubWorkflowJobInProgressWebhook,
+    webhook: GitHubWorkflowJobInProgressWebhook
   ): any {
     const metadata = this.extractGitHubMetadata(webhook);
 
@@ -209,7 +208,7 @@ export class GitHubAdapter extends BaseAdapter {
       metadata.timestamp,
       this.createSubjectId(webhook.workflow_job),
       webhook.workflow_job.workflow_name,
-      webhook.workflow_job.html_url,
+      webhook.workflow_job.html_url
     );
 
     // Add custom data with GitHub-specific information
@@ -232,7 +231,7 @@ export class GitHubAdapter extends BaseAdapter {
           id: webhook.repository.id,
           name: webhook.repository.name,
           full_name: webhook.repository.full_name,
-          owner: webhook.repository.owner?.login || "unknown",
+          owner: webhook.repository.owner?.login || 'unknown',
         },
         sender: {
           login: webhook.sender.login,
@@ -245,13 +244,13 @@ export class GitHubAdapter extends BaseAdapter {
   }
 
   private transformWorkflowJobCompleted(
-    webhook: GitHubWorkflowJobCompletedWebhook,
+    webhook: GitHubWorkflowJobCompletedWebhook
   ): any {
     const metadata = this.extractGitHubMetadata(webhook);
 
     // Map GitHub conclusion to CD Events outcome
     const outcome = this.mapGitHubConclusionToOutcome(
-      webhook.workflow_job.conclusion,
+      webhook.workflow_job.conclusion
     );
 
     // For workflow_job.completed, we create a pipeline run finished event
@@ -263,9 +262,9 @@ export class GitHubAdapter extends BaseAdapter {
       outcome,
       webhook.workflow_job.workflow_name,
       webhook.workflow_job.html_url,
-      outcome === "error" || outcome === "failure"
+      outcome === 'error' || outcome === 'failure'
         ? this.extractErrorMessage(webhook)
-        : undefined,
+        : undefined
     );
 
     // Add custom data with GitHub-specific information
@@ -291,7 +290,7 @@ export class GitHubAdapter extends BaseAdapter {
           id: webhook.repository.id,
           name: webhook.repository.name,
           full_name: webhook.repository.full_name,
-          owner: webhook.repository.owner?.login || "unknown",
+          owner: webhook.repository.owner?.login || 'unknown',
         },
         sender: {
           login: webhook.sender.login,
@@ -308,7 +307,7 @@ export class GitHubAdapter extends BaseAdapter {
       | GitHubWorkflowJobQueuedWebhook
       | GitHubWorkflowJobWaitingWebhook
       | GitHubWorkflowJobInProgressWebhook
-      | GitHubWorkflowJobCompletedWebhook,
+      | GitHubWorkflowJobCompletedWebhook
   ): WebhookEventMetadata {
     const baseMetadata = this.extractWebhookMetadata(webhook);
 
@@ -316,12 +315,15 @@ export class GitHubAdapter extends BaseAdapter {
       ...baseMetadata,
       eventId: baseMetadata.eventId || this.generateEventId(),
       source: AdapterUtils.createSourceUri(
-        "github",
-        webhook.repository.owner?.login || "unknown",
-        webhook.repository.name,
+        'github',
+        webhook.repository.owner?.login || 'unknown',
+        webhook.repository.name
       ),
       eventType: `workflow_job.${webhook.action}`,
-      timestamp: webhook.workflow_job.started_at || webhook.workflow_job.created_at || new Date().toISOString(),
+      timestamp:
+        webhook.workflow_job.started_at ||
+        webhook.workflow_job.created_at ||
+        new Date().toISOString(),
     };
   }
 
@@ -332,37 +334,37 @@ export class GitHubAdapter extends BaseAdapter {
 
   private mapGitHubConclusionToOutcome(conclusion: string | null): Outcome {
     switch (conclusion) {
-      case "success":
-        return "success";
-      case "failure":
-      case "timed_out":
-      case "action_required":
-        return "failure";
-      case "cancelled":
-      case "skipped":
-      case "neutral":
-        return "error";
+      case 'success':
+        return 'success';
+      case 'failure':
+      case 'timed_out':
+      case 'action_required':
+        return 'failure';
+      case 'cancelled':
+      case 'skipped':
+      case 'neutral':
+        return 'error';
       default:
-        return "error";
+        return 'error';
     }
   }
 
   private extractErrorMessage(
-    webhook: GitHubWorkflowJobCompletedWebhook,
+    webhook: GitHubWorkflowJobCompletedWebhook
   ): string {
     const conclusion = webhook.workflow_job.conclusion;
     const jobName = webhook.workflow_job.name;
 
-    if (conclusion === "failure") {
+    if (conclusion === 'failure') {
       return `Workflow job "${jobName}" failed`;
     }
-    if (conclusion === "timed_out") {
+    if (conclusion === 'timed_out') {
       return `Workflow job "${jobName}" timed out`;
     }
-    if (conclusion === "cancelled") {
+    if (conclusion === 'cancelled') {
       return `Workflow job "${jobName}" was cancelled`;
     }
-    if (conclusion === "action_required") {
+    if (conclusion === 'action_required') {
       return `Workflow job "${jobName}" requires action`;
     }
 
@@ -374,7 +376,7 @@ export class GitHubAdapter extends BaseAdapter {
     // Instead, we return a simple success response indicating the webhook is working
     return {
       success: true,
-      message: "GitHub webhook ping received successfully",
+      message: 'GitHub webhook ping received successfully',
       ping: {
         zen: webhook.zen,
         hook_id: webhook.hook_id,

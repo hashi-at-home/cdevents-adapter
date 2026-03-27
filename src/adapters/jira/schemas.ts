@@ -1,5 +1,15 @@
 import { z } from '@hono/zod-openapi';
 
+// Ticket Transition Schema
+const TicketTransitionSchema = z
+  .object({
+    fromState: z.string(),
+    toState: z.string(),
+  })
+  .openapi('JiraTicketTransition', {
+    description: 'Jira ticket transition information',
+  });
+
 // Avatar URLs schema
 const AvatarUrlsSchema = z
   .object({
@@ -408,6 +418,7 @@ export const JiraGenericWebhookSchema = z
   });
 
 // Export types
+export type JiraTicketTransition = z.infer<typeof TicketTransitionSchema>;
 export type JiraUser = z.infer<typeof JiraUserSchema>;
 export type JiraStatus = z.infer<typeof JiraStatusSchema>;
 export type JiraIssueType = z.infer<typeof JiraIssueTypeSchema>;
@@ -417,15 +428,33 @@ export type JiraChangeItem = z.infer<typeof JiraChangeItemSchema>;
 export type JiraWebhookEventType = z.infer<typeof JiraWebhookEventType>;
 
 export type JiraWebhookEvent = z.infer<typeof JiraWebhookEventSchema>;
-export type JiraIssueCreatedWebhook = z.infer<typeof JiraIssueCreatedWebhookSchema>;
-export type JiraIssueUpdatedWebhook = z.infer<typeof JiraIssueUpdatedWebhookSchema>;
-export type JiraIssueDeletedWebhook = z.infer<typeof JiraIssueDeletedWebhookSchema>;
-export type JiraCommentCreatedWebhook = z.infer<typeof JiraCommentCreatedWebhookSchema>;
-export type JiraCommentUpdatedWebhook = z.infer<typeof JiraCommentUpdatedWebhookSchema>;
-export type JiraCommentDeletedWebhook = z.infer<typeof JiraCommentDeletedWebhookSchema>;
-export type JiraWorklogCreatedWebhook = z.infer<typeof JiraWorklogCreatedWebhookSchema>;
-export type JiraWorklogUpdatedWebhook = z.infer<typeof JiraWorklogUpdatedWebhookSchema>;
-export type JiraWorklogDeletedWebhook = z.infer<typeof JiraWorklogDeletedWebhookSchema>;
+export type JiraIssueCreatedWebhook = z.infer<
+  typeof JiraIssueCreatedWebhookSchema
+>;
+export type JiraIssueUpdatedWebhook = z.infer<
+  typeof JiraIssueUpdatedWebhookSchema
+>;
+export type JiraIssueDeletedWebhook = z.infer<
+  typeof JiraIssueDeletedWebhookSchema
+>;
+export type JiraCommentCreatedWebhook = z.infer<
+  typeof JiraCommentCreatedWebhookSchema
+>;
+export type JiraCommentUpdatedWebhook = z.infer<
+  typeof JiraCommentUpdatedWebhookSchema
+>;
+export type JiraCommentDeletedWebhook = z.infer<
+  typeof JiraCommentDeletedWebhookSchema
+>;
+export type JiraWorklogCreatedWebhook = z.infer<
+  typeof JiraWorklogCreatedWebhookSchema
+>;
+export type JiraWorklogUpdatedWebhook = z.infer<
+  typeof JiraWorklogUpdatedWebhookSchema
+>;
+export type JiraWorklogDeletedWebhook = z.infer<
+  typeof JiraWorklogDeletedWebhookSchema
+>;
 export type JiraGenericWebhook = z.infer<typeof JiraGenericWebhookSchema>;
 
 // Priority constants for common Jira priorities
@@ -478,19 +507,29 @@ export function safeValidateJiraWebhookEvent(payload: unknown): {
 
 // Event type detection utilities
 export function isIssueEvent(webhookEvent: string): boolean {
-  return ['jira:issue_created', 'jira:issue_updated', 'jira:issue_deleted'].includes(webhookEvent);
+  return [
+    'jira:issue_created',
+    'jira:issue_updated',
+    'jira:issue_deleted',
+  ].includes(webhookEvent);
 }
 
 export function isCommentEvent(webhookEvent: string): boolean {
-  return ['comment_created', 'comment_updated', 'comment_deleted'].includes(webhookEvent);
+  return ['comment_created', 'comment_updated', 'comment_deleted'].includes(
+    webhookEvent
+  );
 }
 
 export function isWorklogEvent(webhookEvent: string): boolean {
-  return ['worklog_created', 'worklog_updated', 'worklog_deleted'].includes(webhookEvent);
+  return ['worklog_created', 'worklog_updated', 'worklog_deleted'].includes(
+    webhookEvent
+  );
 }
 
 // Helper to extract webhook event type from headers
-export function extractJiraWebhookEventType(headers: Headers): JiraWebhookEventType | string | null {
+export function extractJiraWebhookEventType(
+  headers: Headers
+): JiraWebhookEventType | string | null {
   const eventType =
     headers.get('x-atlassian-webhook-identifier') ||
     headers.get('x-event-key') ||
@@ -503,32 +542,48 @@ export function extractJiraWebhookEventType(headers: Headers): JiraWebhookEventT
 }
 
 // Utility functions for changelog analysis
-export function getStatusChanges(changelog?: { items: JiraChangeItem[] }): JiraChangeItem[] {
+export function getStatusChanges(changelog?: {
+  items: JiraChangeItem[];
+}): JiraChangeItem[] {
   if (!changelog) return [];
   return changelog.items.filter(item => item.field === 'status');
 }
 
-export function getAssigneeChanges(changelog?: { items: JiraChangeItem[] }): JiraChangeItem[] {
+export function getAssigneeChanges(changelog?: {
+  items: JiraChangeItem[];
+}): JiraChangeItem[] {
   if (!changelog) return [];
   return changelog.items.filter(item => item.field === 'assignee');
 }
 
 export function wasAssigned(changelog?: { items: JiraChangeItem[] }): boolean {
   const assigneeChanges = getAssigneeChanges(changelog);
-  return assigneeChanges.some(change => change.from === null && change.to !== null);
+  return assigneeChanges.some(
+    change => change.from === null && change.to !== null
+  );
 }
 
-export function wasUnassigned(changelog?: { items: JiraChangeItem[] }): boolean {
+export function wasUnassigned(changelog?: {
+  items: JiraChangeItem[];
+}): boolean {
   const assigneeChanges = getAssigneeChanges(changelog);
-  return assigneeChanges.some(change => change.from !== null && change.to === null);
+  return assigneeChanges.some(
+    change => change.from !== null && change.to === null
+  );
 }
 
-export function movedToStatus(changelog: { items: JiraChangeItem[] } | undefined, statusName: string): boolean {
+export function movedToStatus(
+  changelog: { items: JiraChangeItem[] } | undefined,
+  statusName: string
+): boolean {
   const statusChanges = getStatusChanges(changelog);
   return statusChanges.some(change => change.toString === statusName);
 }
 
-export function movedFromStatus(changelog: { items: JiraChangeItem[] } | undefined, statusName: string): boolean {
+export function movedFromStatus(
+  changelog: { items: JiraChangeItem[] } | undefined,
+  statusName: string
+): boolean {
   const statusChanges = getStatusChanges(changelog);
   return statusChanges.some(change => change.fromString === statusName);
 }
