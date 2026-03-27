@@ -36,6 +36,7 @@ import {
   createTaskRunStartedEvent,
   createTaskRunFinishedEvent,
   Outcome,
+  CDEvent,
 } from '../../schemas';
 
 export class JiraAdapter extends BaseAdapter {
@@ -43,18 +44,22 @@ export class JiraAdapter extends BaseAdapter {
   readonly version = getVersion();
   // supportedEvents
   readonly supportedEvents = [
+    // We support only jira tickets, other ticketing systems later
     'jira:issue_created',
     'jira:issue_updated',
     'jira:issue_deleted',
-    'comment_created',
-    'comment_updated',
-    'comment_deleted',
-    'worklog_created',
-    'worklog_updated',
-    'worklog_deleted',
+    'jira:comment_created',
+    'jira:comment_updated',
+    'jira:comment_deleted',
+    'jira:worklog_created',
+    'jira:worklog_updated',
+    'jira:worklog_deleted',
   ];
 
-  async transform(webhookData: any, eventType: string): Promise<any> {
+  /*
+  transform is a function which takes webhook data and a presumed event type and transforms it into a Promise of a CDEvent or throws and Error if not supported or transformation fails.
+  */
+  async transform(webhookData: any, eventType: string): Promise<CDEvent> {
     try {
       // Validate the event type is supported
       if (!this.isEventTypeSupported(eventType)) {
@@ -76,11 +81,11 @@ export class JiraAdapter extends BaseAdapter {
           parsedWebhook = JiraIssueDeletedWebhookSchema.parse(webhookData);
           return this.transformIssueDeleted(parsedWebhook);
 
-        case 'comment_created':
+        case 'jira:comment_created':
           parsedWebhook = JiraCommentCreatedWebhookSchema.parse(webhookData);
           return this.transformCommentCreated(parsedWebhook);
 
-        case 'comment_updated':
+        case 'jira:comment_updated':
           parsedWebhook = JiraCommentUpdatedWebhookSchema.parse(webhookData);
           return this.transformCommentUpdated(parsedWebhook);
 
@@ -92,16 +97,20 @@ export class JiraAdapter extends BaseAdapter {
           parsedWebhook = JiraWorklogCreatedWebhookSchema.parse(webhookData);
           return this.transformWorklogCreated(parsedWebhook);
 
-        case 'worklog_updated':
+        case 'jira:worklog_updated':
           parsedWebhook = JiraWorklogUpdatedWebhookSchema.parse(webhookData);
           return this.transformWorklogUpdated(parsedWebhook);
 
-        case 'worklog_deleted':
+        case 'jira:worklog_deleted':
           parsedWebhook = JiraWorklogDeletedWebhookSchema.parse(webhookData);
           return this.transformWorklogDeleted(parsedWebhook);
 
         default:
           // Try to parse as generic webhook
+          // This shouldn't happen since we are catching an error above
+          console.warn(
+            'Warning: Unknown or unsupported event. Attempting generic transformation'
+          );
           parsedWebhook = JiraGenericWebhookSchema.parse(webhookData);
           return this.transformGenericEvent(parsedWebhook, eventType);
       }
@@ -150,7 +159,8 @@ export class JiraAdapter extends BaseAdapter {
   private transformIssueCreated(webhook: JiraIssueCreatedWebhook): any {
     const metadata = this.extractJiraMetadata(webhook);
 
-    // Issue created maps to TaskRunStarted event
+    // Issue created maps to TicketCreated event TODO
+
     const cdevent = createTaskRunStartedEvent(
       metadata.eventId,
       metadata.source,
@@ -181,6 +191,7 @@ export class JiraAdapter extends BaseAdapter {
 
       // Map status transitions to CD Events
       if (this.isQueuedStatus(newStatus)) {
+        // This should be ticketUpdatedEvent TODO
         const cdevent = createPipelineRunQueuedEvent(
           metadata.eventId,
           metadata.source,

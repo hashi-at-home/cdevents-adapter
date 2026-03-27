@@ -7,10 +7,12 @@ export const OutcomeEnum = z.enum(['success', 'error', 'failure']).openapi({
 });
 export type Outcome = z.infer<typeof OutcomeEnum>;
 
-export const SubjectTypeEnum = z.enum(['pipelineRun', 'taskRun']).openapi({
-  description: 'The type of subject in a CD Event',
-  example: 'pipelineRun',
-});
+export const SubjectTypeEnum = z
+  .enum(['pipelineRun', 'taskRun', 'ticket'])
+  .openapi({
+    description: 'The type of subject in a CD Event',
+    example: 'pipelineRun',
+  });
 export type SubjectType = z.infer<typeof SubjectTypeEnum>;
 
 export const LinkTypeEnum = z.enum(['PATH', 'RELATION', 'END']).openapi({
@@ -241,14 +243,6 @@ export const TaskRunFinishedContentSchema = z
 
 // ticket events
 export const TicketContentSchema = z.object({
-  id: z.string().openapi({
-    description: 'subject identifier',
-    example: '04896C75-F34D-40FF-A584-3F2B71CB9D47',
-  }),
-  source: z.string().optional().openapi({
-    description: 'Source of the ticket',
-    example: 'https://your.jira.source/project/project_name',
-  }),
   summary: z.string().openapi({
     description: 'Summary provided on the ticket',
     example: 'Implement feature xyz',
@@ -359,22 +353,12 @@ export const TaskRunFinishedSubjectSchema = CDEventSubjectSchema.extend({
 export const TicketCreatedSubjectSchema = CDEventSubjectSchema.extend({
   type: z.literal('ticketCreated').optional(),
   content: TicketContentSchema,
+}).openapi({
+  description: 'Subject of a ticket created event',
 });
 
 export const TicketUpdatedSubjectSchema = CDEventSubjectSchema.extend({
   type: z.literal('ticketUpdated').optional(),
-  content: TicketContentSchema,
-});
-
-export const TicketClosedSubjectSchema = CDEventSubjectSchema.extend({
-  type: z.literal('ticketClosed').optional(),
-  resolution: z
-    .enum(['Done', 'Abandoned', 'Rejected', 'Closed', 'Fixed'])
-    .optional()
-    .openapi({
-      description: 'The ticket resolution',
-      example: 'Fixed',
-    }),
   content: TicketContentSchema,
 });
 
@@ -457,6 +441,105 @@ export const TaskRunFinishedEventSchema = CDEventSchema.extend({
   description: 'Event emitted when a task run finishes',
 });
 
+// Ticket Event Schemas
+//
+// ticket content common to all
+export const TicketClosedContentSchema = z
+  .object({
+    summary: z.string().openapi({
+      description: 'Summary provided on the ticket',
+      example: 'Implement el featuro',
+    }),
+    ticketType: z
+      .enum(['Bug', 'Feature', 'Epic', 'Story', 'Task', 'Sub-Task'])
+      .optional()
+      .openapi({
+        description: 'The type of ticket',
+        example: 'Bug',
+      }),
+    group: z.string().optional().openapi({
+      description: 'The group the ticket belongs to',
+      example: 'DevOps',
+    }),
+    creator: z.string().openapi({
+      description: 'The creator of the ticket',
+      example: 'Product Owner',
+    }),
+    assignees: z
+      .array(z.string())
+      .optional()
+      .openapi({
+        description: 'The assignees of the ticket',
+        example: ['Engineer'],
+      }),
+    priority: z.string().optional().openapi({
+      description: 'The priority of the ticket',
+      example: 'High',
+    }),
+    labels: z
+      .array(z.string())
+      .optional()
+      .openapi({
+        description: 'The labels of the ticket',
+        example: ['bug', 'urgent'],
+      }),
+    milestone: z.string().optional().openapi({
+      description: 'The milestone of the ticket',
+      example: 'Release xyz',
+    }),
+    uri: z.string().optional().openapi({
+      description: 'The URI of the ticket',
+      example: 'https://jira.your.org/ticket/123',
+    }),
+    resolution: z
+      .enum(['Completed', 'Abandoned', 'Closed', 'Rejected'])
+      .openapi({
+        description: 'The resolution of the ticket',
+        example: 'Closed',
+      }),
+  })
+  .openapi('TicketClosedContent');
+
+export const TicketClosedSubjectSchema = CDEventSubjectSchema.extend({
+  type: z.literal('ticketClosed').optional(),
+  content: TicketClosedContentSchema,
+}).openapi('TicketClosedSubject', {
+  description: 'Subject of a ticket closed event',
+});
+
+export const TicketCreatedEventSchema = CDEventSchema.extend({
+  context: CDEventContextSchema.extend({
+    type: z.literal('dev.cdevents.ticket.created.0.2.0').openapi({
+      description: 'Event type for ticket created events',
+    }),
+  }),
+  subject: TicketCreatedSubjectSchema,
+}).openapi('TicketCreatedEvent', {
+  description: 'Event emitted when a ticket is created',
+});
+
+export const TicketUpdatedEventSchema = CDEventSchema.extend({
+  context: CDEventContextSchema.extend({
+    type: z.literal('dev.cdevents.ticket.updated.0.2.0').openapi({
+      description: 'Event type for ticket updated events',
+    }),
+  }),
+  subject: TicketUpdatedSubjectSchema,
+}).openapi('TicketUpdatedEvent', {
+  description: 'Event emitted when a ticket is updated',
+});
+
+export const TicketClosedEventSchema = CDEventSchema.extend({
+  context: CDEventContextSchema.extend({
+    type: z.literal('dev.cdevents.ticket.closed.0.2.0').openapi({
+      description: 'Event type for ticket closed events',
+    }),
+  }),
+  subject: TicketClosedSubjectSchema,
+}).openapi('TicketClosedEvent', {
+  description: 'Event emitted when a ticket is closed',
+});
+
 // Union type for all core events
 export const CoreCDEventSchema = z
   .union([
@@ -482,6 +565,11 @@ export type PipelineRunFinishedEvent = z.infer<
 >;
 export type TaskRunStartedEvent = z.infer<typeof TaskRunStartedEventSchema>;
 export type TaskRunFinishedEvent = z.infer<typeof TaskRunFinishedEventSchema>;
+
+export type TicketCreatedEvent = z.infer<typeof TicketCreatedEventSchema>;
+export type TicketUpdatedEvent = z.infer<typeof TicketUpdatedEventSchema>;
+export type TicketClosedEvent = z.infer<typeof TicketClosedEventSchema>;
+
 export type CoreCDEvent = z.infer<typeof CoreCDEventSchema>;
 
 // Helper functions for creating events
@@ -623,3 +711,81 @@ export const createTaskRunFinishedEvent = (
 });
 
 // ticket created Event
+export const createTicketCreatedEvent = (
+  contextId: string,
+  subjectId: string,
+  timestamp: string,
+  source: string,
+  ticketType: string,
+  creator: string,
+  summary?: string,
+  group?: string,
+  assignee?: string,
+  priority?: string,
+  labels?: Array<string>,
+  milestone?: string,
+  uri?: string
+): TicketCreatedEvent => ({
+  context: {
+    specVersion: '0.4.1',
+    id: contextId,
+    source,
+    type: 'dev.cdevents.ticket.created.0.2.0',
+    timestamp,
+  },
+  subject: {
+    id: subjectId,
+    type: 'ticketCreated',
+    content: {
+      ...(summary && { summary }),
+      ...(ticketType && { ticketType }),
+      ...(group && { group }),
+      ...(creator && { creator }),
+      ...(assignee && { assignee }),
+      ...(priority && { priority }),
+      ...(labels && { labels }),
+      ...(milestone && { milestone }),
+      ...(uri && { uri }),
+    },
+  },
+});
+
+// ticketUpdated Event
+export const createTicketUpdatedEvent = (
+  contextId: string,
+  subjectId: string,
+  source: string,
+  timestamp: string,
+  summary: string,
+  creator: string,
+  ticketType?: string,
+  assignee?: string,
+  priority?: string,
+  labels?: Array<string>,
+  milestone?: string,
+  url?: string
+): TicketUpdatedEvent => ({
+  context: {
+    specVersion: '0.4.1',
+    id: contextId,
+    source,
+    timestamp,
+    type: 'dev.cdevents.ticket.updated.0.2.0',
+  },
+  subject: {
+    id: subjectId,
+    source: source,
+    content: {
+      // ...(id && { subjectId }),
+      ...(summary && { summary }),
+      ...(ticketType && { ticketType }),
+      ...(assignee && { assignee }),
+      ...(priority && { priority }),
+      ...(labels && { labels }),
+      ...(milestone && { milestone }),
+      ...(url && { url }),
+      ...(creator && { creator }),
+      ...(url && { url }),
+    },
+  },
+});

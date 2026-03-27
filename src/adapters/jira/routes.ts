@@ -1,6 +1,7 @@
 import { OpenAPIHono, createRoute } from '@hono/zod-openapi';
 import { z } from '@hono/zod-openapi';
 import { Context } from 'hono';
+import { Queue } from '@cloudflare/workers-types';
 import { getVersion } from '../../version';
 import { JiraAdapter } from './adapter';
 import {
@@ -18,17 +19,14 @@ import {
   extractJiraWebhookEventType,
   safeValidateJiraWebhookEvent,
 } from './schemas';
-import {
-  PipelineRunQueuedEventSchema,
-  PipelineRunStartedEventSchema,
-  PipelineRunFinishedEventSchema,
-  TaskRunStartedEventSchema,
-  TaskRunFinishedEventSchema,
-} from '../../schemas';
 
 type Env = {
-  readonly CI_BUILD_QUEUED: any;
-  readonly EVENTS_BUCKET?: any;
+  // We bind to queues and the events bucket
+  // Only ticket queues are bound here.
+  readonly TICKET_CREATED_Q: Queue;
+  readonly TICKET_UPDATED_Q: Queue;
+  readonly TICKET_CLOSED_Q: Queue;
+  readonly EVENTS_BUCKET: R2Bucket;
 };
 
 const AdapterSuccessResponseSchema = z.object({
@@ -44,7 +42,7 @@ const jiraAdapter = new JiraAdapter();
  * Added: 2025-01-27 - Webhook logging functionality for Jira events
  */
 async function logWebhookToR2(
-  bucket: any | undefined,
+  bucket: R2Bucket,
   webhookData: any,
   transformedEvent: any | null,
   context: {
@@ -643,7 +641,7 @@ jiraRoutes.openapi(issueCreatedRoute, async c => {
     // Validate the generated CD Event
     const validationResult = await validateCDEvent(cdevent);
 
-    // Log to R2 if available
+    // Log to R2
     await logWebhookToR2(c.env.EVENTS_BUCKET, webhookData, cdevent, {
       eventType,
       issueKey: webhookData.issue?.key,
@@ -651,7 +649,13 @@ jiraRoutes.openapi(issueCreatedRoute, async c => {
       user: webhookData.user?.displayName,
     });
 
+    // if validation was successful, publish it on the queue, else report error
     if (validationResult.success) {
+      // put it on the queue
+      const qResult = await c.env.TICKET_CREATED_Q.send(cdevent);
+      console.log(`Published event ${cdevent} on queue`);
+      console.log(JSON.stringify(qResult));
+
       return c.json(
         {
           success: true,
