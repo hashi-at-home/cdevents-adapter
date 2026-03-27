@@ -2,22 +2,24 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import app from '../../index';
 import {
   CDEventSchema,
+  OutcomeEnum,
+  SubjectTypeEnum,
+  TimestampSchema,
+  UriSchema,
+} from '../../schemas';
+import {
   CoreCDEventSchema,
   PipelineRunQueuedEventSchema,
   PipelineRunStartedEventSchema,
   PipelineRunFinishedEventSchema,
   TaskRunStartedEventSchema,
   TaskRunFinishedEventSchema,
-  OutcomeEnum,
-  SubjectTypeEnum,
-  TimestampSchema,
-  UriSchema,
   createPipelineRunQueuedEvent,
   createPipelineRunStartedEvent,
   createPipelineRunFinishedEvent,
   createTaskRunStartedEvent,
   createTaskRunFinishedEvent,
-} from '../../schemas';
+} from '../../schema-core-events';
 
 describe('OpenAPI Schema Integration', () => {
   let openApiSpec: any;
@@ -65,7 +67,7 @@ describe('OpenAPI Schema Integration', () => {
 
       expect(schemas.CDEventSubject.properties.type).toEqual({
         type: 'string',
-        enum: ['pipelineRun', 'taskRun'],
+        enum: ['pipelineRun', 'taskRun', 'ticket'],
         description: 'The type of subject in a CD Event',
         example: 'pipelineRun',
       });

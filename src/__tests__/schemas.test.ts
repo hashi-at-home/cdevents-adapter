@@ -12,6 +12,8 @@ import {
   CDEventContextSchema,
   CDEventSubjectSchema,
   SubjectReferenceSchema,
+} from '../schemas';
+import {
   // Content schemas
   PipelineRunContentSchema,
   PipelineRunQueuedContentSchema,
@@ -33,7 +35,7 @@ import {
   createPipelineRunFinishedEvent,
   createTaskRunStartedEvent,
   createTaskRunFinishedEvent,
-} from '../schemas';
+} from '../schema-core-events';
 
 describe('CD Events Core Schemas', () => {
   describe('Basic Types and Enums', () => {

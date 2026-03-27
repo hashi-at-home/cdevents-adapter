@@ -3,21 +3,21 @@ import { swaggerUI } from '@hono/swagger-ui';
 import { githubRoutes } from './adapters/github/routes';
 import { jiraRoutes } from './adapters/jira/routes';
 import { getVersion, getAppName } from './version';
+// import {
+//   OutcomeEnum,
+//   CDEventContextSchema,
+//   SubjectTypeEnum,
+//   LinkTypeEnum,
+//   LinkKindEnum,
+// } from './schemas';
 import {
-  CDEventSchema,
   CoreCDEventSchema,
   PipelineRunQueuedEventSchema,
   PipelineRunStartedEventSchema,
   PipelineRunFinishedEventSchema,
   TaskRunStartedEventSchema,
   TaskRunFinishedEventSchema,
-  CDEventContextSchema,
-  CDEventSubjectSchema,
-  OutcomeEnum,
-  SubjectTypeEnum,
-  LinkTypeEnum,
-  LinkKindEnum,
-} from './schemas';
+} from './schema-core-events';
 
 type Environment = {
   readonly CI_BUILD_QUEUED: any;
