@@ -128,7 +128,7 @@ export const TicketCreatedSubjectSchema = CDEventSubjectSchema.extend({
 });
 
 export const TicketUpdatedSubjectSchema = CDEventSubjectSchema.extend({
-  type: z.literal('ticketUpdated').optional(),
+  type: z.literal('ticket').optional(),
   content: TicketContentSchema,
 });
 
@@ -288,8 +288,6 @@ export const createTicketClosedEvent = (
 // Union type for all core events
 export const TicketCDEventSchema = z
   .union([
-    // core events
-    // Ops events
     TicketCreatedEventSchema,
     TicketUpdatedEventSchema,
     TicketClosedEventSchema,

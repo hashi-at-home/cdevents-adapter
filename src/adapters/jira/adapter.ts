@@ -118,7 +118,7 @@ export class JiraAdapter extends BaseAdapter {
           console.warn(
             'Warning: Unknown or unsupported event. Attempting generic transformation'
           );
-          parsedWebhook = JiraGenericWebhookSchema.parse(webhookData);
+          parsedWebhook = JiraWebhookEventSchema.parse(webhookData);
           return this.transformGenericEvent(parsedWebhook, eventType);
       }
     } catch (error) {
@@ -195,26 +195,27 @@ export class JiraAdapter extends BaseAdapter {
     return cdevent;
   }
 
-  private transformIssueUpdated(webhook: JiraIssueUpdatedWebhook): any {
+  private transformIssueUpdated(webhook: JiraIssueUpdatedWebhook): CDEvent {
     const metadata = this.extractJiraMetadata(webhook);
 
-    // Check if this is a status transition
-    //
-    // This should be compared with an existing KV
-    // pseudocode:
-    // If there is no key in our KV for this ticket, it is a new ticket, there is no transition
-    //
-    // checkStatusTransition is a function which gets the
-    // const tx = await checkStatusTransition(webhook.issue.key)
+    const assignees = webhook.issue.fields.assignee
+      ? [webhook.issue.fields.assignee.displayName]
+      : undefined;
 
-    const statusChanges = getStatusChanges(webhook.changelog);
-
-    if (statusChanges.length > 0) {
-      // This is a status change - determine the appropriate CD Event
-      const latestStatusChange = statusChanges[statusChanges.length - 1];
-      const newStatus = latestStatusChange.toString;
-      const oldStatus = latestStatusChange.fromString;
-    }
+    return createTicketUpdatedEvent(
+      metadata.eventId, // contextID
+      webhook.issue.key, // subjectID
+      metadata.source, // source
+      metadata.timestamp, // timestamp
+      webhook.issue.fields.creator.displayName, // creator
+      webhook.issue.fields.summary, // summary
+      this.createIssueUrl(webhook.issue), // uri
+      webhook.issue.fields.issuetype.name, // ticketType
+      assignees,
+      undefined, // priority
+      [],
+      undefined
+    );
   }
 
   private transformIssueDeleted(webhook: JiraIssueDeletedWebhook): any {
@@ -225,16 +226,23 @@ export class JiraAdapter extends BaseAdapter {
 
   private transformCommentCreated(webhook: JiraCommentCreatedWebhook): any {
     const metadata = this.extractJiraMetadata(webhook);
-
+    const assignees = webhook.issue.fields.assignee
+      ? [webhook.issue.fields.assignee.displayName]
+      : undefined;
     // Comment events can be treated as task events
     const cdevent = createTicketUpdatedEvent(
-      metadata.eventId,
-      metadata.source,
-      metadata.timestamp,
-      `${this.createSubjectId(webhook.issue)}-comment-${webhook.comment!.id}`,
-      `Comment on ${webhook.issue.fields.summary}`,
-      undefined, // pipelineRun
-      this.createIssueUrl(webhook.issue)
+      metadata.eventId, // contextId
+      metadata.eventId, // subjectId
+      metadata.source, // source
+      metadata.timestamp, // timestamp
+      webhook.issue.fields.creator.displayName, // creator
+      webhook.issue.fields.summary, // summary
+      this.createIssueUrl(webhook.issue), // uri
+      webhook.issue.fields.issuetype.name, // ticketType,
+      assignees, // assignees
+      undefined, // priority
+      [],
+      undefined
     );
 
     cdevent.customData = this.createJiraCustomData(webhook, 'comment_created');
@@ -243,16 +251,22 @@ export class JiraAdapter extends BaseAdapter {
 
   private transformCommentUpdated(webhook: JiraCommentUpdatedWebhook): any {
     const metadata = this.extractJiraMetadata(webhook);
-
+    const assignees = webhook.issue.fields.assignee
+      ? [webhook.issue.fields.assignee.displayName]
+      : undefined;
     const cdevent = createTicketUpdatedEvent(
-      metadata.eventId,
-      metadata.source,
-      metadata.timestamp,
-      `${this.createSubjectId(webhook.issue)}-comment-${webhook.comment!.id}`,
-      'success',
-      `Comment updated on ${webhook.issue.fields.summary}`,
-      undefined, // pipelineRun
-      this.createIssueUrl(webhook.issue)
+      metadata.eventId, // contextId
+      metadata.eventId, // subjectId
+      metadata.source, // source
+      metadata.timestamp, // timestamp
+      webhook.issue.fields.creator.displayName, // creator
+      webhook.issue.fields.summary, // summary
+      this.createIssueUrl(webhook.issue), // uri
+      webhook.issue.fields.issuetype.name, // ticketType,
+      assignees, // assignees
+      undefined, // priority
+      [],
+      undefined
     );
 
     cdevent.customData = this.createJiraCustomData(webhook, 'comment_updated');
@@ -261,16 +275,22 @@ export class JiraAdapter extends BaseAdapter {
 
   private transformCommentDeleted(webhook: JiraCommentDeletedWebhook): any {
     const metadata = this.extractJiraMetadata(webhook);
-
+    const assignees = webhook.issue.fields.assignee
+      ? [webhook.issue.fields.assignee.displayName]
+      : undefined;
     const cdevent = createTicketUpdatedEvent(
-      metadata.eventId,
-      metadata.source,
-      metadata.timestamp,
-      `${this.createSubjectId(webhook.issue)}-comment-${webhook.comment!.id}`,
-      'error',
-      `Comment deleted from ${webhook.issue.fields.summary}`,
-      undefined, // pipelineRun
-      this.createIssueUrl(webhook.issue)
+      metadata.eventId, // contextId
+      metadata.eventId, // subjectId
+      metadata.source, // source
+      metadata.timestamp, // timestamp
+      webhook.issue.fields.creator.displayName, // creator
+      webhook.issue.fields.summary, // summary
+      this.createIssueUrl(webhook.issue), // uri
+      webhook.issue.fields.issuetype.name, // ticketType,
+      assignees, // assignees
+      undefined, // priority
+      [],
+      undefined
     );
 
     cdevent.customData = this.createJiraCustomData(webhook, 'comment_deleted');
@@ -279,15 +299,22 @@ export class JiraAdapter extends BaseAdapter {
 
   private transformWorklogCreated(webhook: JiraWorklogCreatedWebhook): any {
     const metadata = this.extractJiraMetadata(webhook);
-
+    const assignees = webhook.issue.fields.assignee
+      ? [webhook.issue.fields.assignee.displayName]
+      : undefined;
     const cdevent = createTicketUpdatedEvent(
-      metadata.eventId,
-      metadata.source,
-      metadata.timestamp,
-      `${this.createSubjectId(webhook.issue)}-worklog-${webhook.worklog!.id}`,
-      `Work logged on ${webhook.issue.fields.summary}`,
-      undefined, // pipelineRun
-      this.createIssueUrl(webhook.issue)
+      metadata.eventId, // contextId
+      metadata.eventId, // subjectId
+      metadata.source, // source
+      metadata.timestamp, // timestamp
+      webhook.issue.fields.creator.displayName, // creator
+      webhook.issue.fields.summary, // summary
+      this.createIssueUrl(webhook.issue), // uri
+      webhook.issue.fields.issuetype.name, // ticketType,
+      assignees, // assignees
+      undefined, // priority
+      [],
+      undefined
     );
 
     cdevent.customData = this.createJiraCustomData(webhook, 'worklog_created');
@@ -296,16 +323,22 @@ export class JiraAdapter extends BaseAdapter {
 
   private transformWorklogUpdated(webhook: JiraWorklogUpdatedWebhook): any {
     const metadata = this.extractJiraMetadata(webhook);
-
+    const assignees = webhook.issue.fields.assignee
+      ? [webhook.issue.fields.assignee.displayName]
+      : undefined;
     const cdevent = createTicketUpdatedEvent(
-      metadata.eventId,
-      metadata.source,
-      metadata.timestamp,
-      `${this.createSubjectId(webhook.issue)}-worklog-${webhook.worklog!.id}`,
-      'success',
-      `Worklog updated on ${webhook.issue.fields.summary}`,
-      undefined, // pipelineRun
-      this.createIssueUrl(webhook.issue)
+      metadata.eventId, // contextId
+      metadata.eventId, // subjectId
+      metadata.source, // source
+      metadata.timestamp, // timestamp
+      webhook.issue.fields.creator.displayName, // creator
+      webhook.issue.fields.summary, // summary
+      this.createIssueUrl(webhook.issue), // uri
+      webhook.issue.fields.issuetype.name, // ticketType,
+      assignees, // assignees
+      undefined, // priority
+      [],
+      undefined
     );
 
     cdevent.customData = this.createJiraCustomData(webhook, 'worklog_updated');
@@ -314,16 +347,22 @@ export class JiraAdapter extends BaseAdapter {
 
   private transformWorklogDeleted(webhook: JiraWorklogDeletedWebhook): any {
     const metadata = this.extractJiraMetadata(webhook);
-
+    const assignees = webhook.issue.fields.assignee
+      ? [webhook.issue.fields.assignee.displayName]
+      : undefined;
     const cdevent = createTicketUpdatedEvent(
-      metadata.eventId,
-      metadata.source,
-      metadata.timestamp,
-      `${this.createSubjectId(webhook.issue)}-worklog-${webhook.worklog!.id}`,
-      'error',
-      `Worklog deleted from ${webhook.issue.fields.summary}`,
-      undefined, // pipelineRun
-      this.createIssueUrl(webhook.issue)
+      metadata.eventId, // contextId
+      metadata.eventId, // subjectId
+      metadata.source, // source
+      metadata.timestamp, // timestamp
+      webhook.issue.fields.creator.displayName, // creator
+      webhook.issue.fields.summary, // summary
+      this.createIssueUrl(webhook.issue), // uri
+      webhook.issue.fields.issuetype.name, // ticketType,
+      assignees, // assignees
+      undefined, // priority
+      [],
+      undefined
     );
 
     cdevent.customData = this.createJiraCustomData(webhook, 'worklog_deleted');
@@ -331,23 +370,27 @@ export class JiraAdapter extends BaseAdapter {
   }
 
   private transformGenericEvent(
-    webhook: JiraGenericWebhook,
+    webhook: JiraWebhookEvent,
     eventType: string
-  ): any {
+  ): CDEvent {
     const metadata = this.extractGenericJiraMetadata(webhook, eventType);
-
+    const assignees = webhook.issue.fields.assignee
+      ? [webhook.issue.fields.assignee.displayName]
+      : undefined;
     // Generic events default to task events
     const cdevent = createTicketUpdatedEvent(
-      metadata.eventId,
-      metadata.source,
-      metadata.timestamp,
-      webhook.issue
-        ? this.createSubjectId(webhook.issue)
-        : `jira-${eventType}-${Date.now()}`,
-      'success',
-      webhook.issue?.fields.summary || `Jira ${eventType} event`,
-      undefined, // pipelineRun
-      webhook.issue ? this.createIssueUrl(webhook.issue) : undefined
+      metadata.eventId, // contextId
+      metadata.eventId, // subjectId
+      metadata.source, // source
+      metadata.timestamp, // timestamp
+      webhook.issue.fields.creator.displayName, // creator
+      webhook.issue.fields.summary, // summary
+      this.createIssueUrl(webhook.issue), // uri
+      webhook.issue.fields.issuetype.name, // ticketType,
+      assignees, // assignees
+      undefined, // priority
+      [],
+      undefined
     );
 
     cdevent.customData = {
