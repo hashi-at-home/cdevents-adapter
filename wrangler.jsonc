@@ -20,6 +20,12 @@
       "bucket_name": "hashiathome-cd-events",
     },
   ],
+  "kv_namespaces": [
+    {
+      "binding": "TICKET_TX",
+      "id": "d7e0c0eb07fa46b6b3d67fe234948bc3", // pragma: allowlist secret
+    },
+  ],
   "queues": {
     "consumers": [],
     // A queue for every event type supported.

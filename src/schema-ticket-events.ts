@@ -18,13 +18,10 @@ export const TicketClosedContentSchema = z
       description: 'Summary provided on the ticket',
       example: 'Implement el featuro',
     }),
-    ticketType: z
-      .enum(['Bug', 'Feature', 'Epic', 'Story', 'Task', 'Sub-Task'])
-      .optional()
-      .openapi({
-        description: 'The type of ticket',
-        example: 'Bug',
-      }),
+    ticketType: z.string().optional().openapi({
+      description: 'The type of ticket',
+      example: 'Bug',
+    }),
     group: z.string().optional().openapi({
       description: 'The group the ticket belongs to',
       example: 'DevOps',
@@ -80,13 +77,10 @@ export const TicketContentSchema = z.object({
     description: 'Summary provided on the ticket',
     example: 'Implement feature xyz',
   }),
-  ticketType: z
-    .enum(['Bug', 'Epic', 'Story', 'Task', 'Sub-Task'])
-    .optional()
-    .openapi({
-      description: 'The type of ticket in the event',
-      example: 'Bug',
-    }),
+  ticketType: z.string().optional().openapi({
+    description: 'The type of ticket in the event',
+    example: 'Bug',
+  }),
   group: z.string().optional().openapi({
     description: 'Group or project the ticket is assigned to',
     example: 'DevOps',
@@ -177,10 +171,10 @@ export const createTicketCreatedEvent = (
   subjectId: string,
   timestamp: string,
   source: string,
-  ticketType: 'Bug' | 'Epic' | 'Story' | 'Task' | 'Sub-Task' | undefined,
   creator: string,
   summary: string,
   uri: string,
+  ticketType?: string,
   group?: string,
   assignees?: string[],
   priority?: string,
@@ -220,7 +214,7 @@ export const createTicketUpdatedEvent = (
   creator: string,
   summary: string,
   uri: string,
-  ticketType?: 'Bug' | 'Epic' | 'Story' | 'Task' | 'Sub-Task' | undefined,
+  ticketType?: string | undefined,
   assignees?: string[],
   priority?: string,
   labels?: Array<string>,
@@ -259,14 +253,7 @@ export const createTicketClosedEvent = (
   creator: string,
   uri: string,
   resolution: 'Completed' | 'Abandoned' | 'Closed' | 'Rejected',
-  ticketType?:
-    | 'Bug'
-    | 'Epic'
-    | 'Story'
-    | 'Task'
-    | 'Sub-Task'
-    | 'Feature'
-    | undefined,
+  ticketType?: string | undefined,
   assignees?: string[],
   priority?: string,
   labels?: string[],

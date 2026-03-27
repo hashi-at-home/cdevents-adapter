@@ -1,5 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { Context } from 'hono';
+import { CDEvent } from '../schemas';
 
 // Base adapter interface
 export interface Adapter {
@@ -113,7 +114,7 @@ export abstract class BaseAdapter implements Adapter {
   // Helper method to create success response
   protected createSuccessResponse(
     message: string,
-    cdevent?: any
+    cdevent: CDEvent
   ): AdapterResponse {
     return {
       success: true,
