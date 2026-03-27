@@ -29,16 +29,15 @@ import {
   movedFromStatus,
   JIRA_STATUSES,
 } from './schemas';
+import { Outcome, CDEvent } from '../../schemas';
+
 import {
   createPipelineRunQueuedEvent,
   createPipelineRunStartedEvent,
   createPipelineRunFinishedEvent,
   createTaskRunStartedEvent,
   createTaskRunFinishedEvent,
-  Outcome,
-  CDEvent,
-} from '../../schemas';
-
+} from '../../schema-core-events';
 export class JiraAdapter extends BaseAdapter {
   readonly name = 'jira';
   readonly version = getVersion();
