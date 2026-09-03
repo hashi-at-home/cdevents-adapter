@@ -5,7 +5,7 @@ python.uv_venv_auto = true
 node = "24.14.1"
 python = "3.14.3"
 uv = "latest"
-prek = "0.3.1"
+prek = "0.5.2"
 
 [env]
 _.python.venv = { path = ".venv", create = true }
